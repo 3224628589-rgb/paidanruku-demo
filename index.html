@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>掌店易智能入库 - 扫描仪屏 Demo</title>
+    <link rel="stylesheet" href="styles.css?v=compare-images-v3" />
+  </head>
+  <body>
+    <main class="demo-stage">
+      <section class="device">
+        <header class="app-header">
+          <div class="brand">
+            <div class="brand-mark">
+              <span></span><span></span><span></span>
+            </div>
+            <div>
+              <strong>掌店易智能入库</strong>
+              <small>拍单 · 验货 · 核准</small>
+            </div>
+          </div>
+          <div class="store-chip">厦门药栈前置仓</div>
+        </header>
+
+        <nav class="stepper" aria-label="入库步骤">
+          <button class="step active" data-step="photo">
+            <span class="step-icon neu-icon photo-neu" aria-hidden="true">
+              <svg class="neo-svg" viewBox="0 0 120 120" fill="none">
+                <ellipse cx="60" cy="101" rx="35" ry="9" fill="#4E66E8" opacity=".22"/>
+                <path d="M27 47c0-7 6-13 13-13h12l5-9c2-4 6-6 11-6h13c5 0 9 2 11 6l5 9h11c7 0 13 6 13 13v38c0 7-6 13-13 13H40c-7 0-13-6-13-13V47Z" fill="url(#photoBody)"/>
+                <path d="M39 42h66" stroke="#C7D2FF" stroke-width="3" stroke-linecap="round" opacity=".7"/>
+                <circle cx="63" cy="68" r="23" fill="url(#photoLens)"/>
+                <circle cx="63" cy="68" r="13" fill="#3F57D9"/>
+                <circle cx="58" cy="62" r="5" fill="#fff" opacity=".82"/>
+                <circle cx="96" cy="52" r="5" fill="#EAF0FF"/>
+                <defs>
+                  <radialGradient id="photoBody" cx="34%" cy="20%" r="86%">
+                    <stop stop-color="#9EB1FF"/>
+                    <stop offset=".55" stop-color="#516BEA"/>
+                    <stop offset="1" stop-color="#2738A5"/>
+                  </radialGradient>
+                  <linearGradient id="photoLens" x1="42" y1="47" x2="84" y2="89">
+                    <stop stop-color="#fff"/>
+                    <stop offset=".58" stop-color="#DDE5FF"/>
+                    <stop offset="1" stop-color="#90A3FF"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+            </span>
+            <b>拍单</b>
+          </button>
+          <button class="step" data-step="scan">
+            <span class="step-icon neu-icon scan-neu" aria-hidden="true">
+              <svg class="neo-svg box-closed" viewBox="0 0 120 120" fill="none">
+                <ellipse cx="60" cy="101" rx="34" ry="8" fill="#E78523" opacity=".22"/>
+                <path d="M28 49 60 31l32 18-32 19-32-19Z" fill="url(#boxClosedTop)"/>
+                <path d="M28 49v33l32 19V68L28 49Z" fill="#F59A35"/>
+                <path d="M92 49v33l-32 19V68l32-19Z" fill="url(#boxClosedSide)"/>
+                <path d="M44 40 76 58" stroke="#FFF0D2" stroke-width="4" stroke-linecap="round" opacity=".75"/>
+                <defs>
+                  <linearGradient id="boxClosedTop" x1="28" y1="31" x2="92" y2="68">
+                    <stop stop-color="#FFD99D"/>
+                    <stop offset="1" stop-color="#F08A25"/>
+                  </linearGradient>
+                  <linearGradient id="boxClosedSide" x1="60" y1="49" x2="91" y2="101">
+                    <stop stop-color="#FFB95F"/>
+                    <stop offset="1" stop-color="#DD6C16"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+              <svg class="neo-svg box-open" viewBox="0 0 120 120" fill="none">
+                <ellipse cx="60" cy="102" rx="36" ry="9" fill="#E78523" opacity=".24"/>
+                <path d="M29 51 60 34l31 17-31 18-31-18Z" fill="#FFD69A"/>
+                <path d="M29 49 16 34l31-13 13 14-31 14Z" fill="url(#boxOpenFlapL)"/>
+                <path d="M91 49 104 34 73 21 60 35l31 14Z" fill="#F69A35"/>
+                <path d="M29 51v32l31 18V69L29 51Z" fill="#F59A35"/>
+                <path d="M91 51v32l-31 18V69l31-18Z" fill="url(#boxOpenSide)"/>
+                <path d="M47 42 74 57" stroke="#FFF3DB" stroke-width="4" stroke-linecap="round" opacity=".8"/>
+                <defs>
+                  <linearGradient id="boxOpenFlapL" x1="16" y1="21" x2="60" y2="49">
+                    <stop stop-color="#FFE0A9"/>
+                    <stop offset="1" stop-color="#F38B25"/>
+                  </linearGradient>
+                  <linearGradient id="boxOpenSide" x1="60" y1="51" x2="91" y2="101">
+                    <stop stop-color="#FFC06A"/>
+                    <stop offset="1" stop-color="#DE7119"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+            </span>
+            <b>验货</b>
+          </button>
+          <button class="step" data-step="approve">
+            <span class="step-icon neu-icon approve-neu" aria-hidden="true">
+              <svg class="neo-svg" viewBox="0 0 120 120" fill="none">
+                <ellipse cx="61" cy="101" rx="34" ry="8" fill="#5269EA" opacity=".2"/>
+                <path d="M35 18h43l15 16v49c0 7-5 12-12 12H35c-7 0-12-5-12-12V30c0-7 5-12 12-12Z" fill="url(#approvePaper)"/>
+                <path d="M78 18v16h15" fill="#DDE5FF"/>
+                <path d="M38 44h35M38 58h31M38 72h23" stroke="#8FA0E8" stroke-width="5" stroke-linecap="round"/>
+                <circle cx="76" cy="75" r="20" fill="url(#approveGlass)"/>
+                <circle cx="76" cy="75" r="13" fill="#EEF3FF" opacity=".18"/>
+                <path d="m90 90 14 14" stroke="#4358D4" stroke-width="8" stroke-linecap="round"/>
+                <path d="m66 75 7 7 15-18" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+                <defs>
+                  <linearGradient id="approvePaper" x1="35" y1="18" x2="86" y2="94">
+                    <stop stop-color="#fff"/>
+                    <stop offset=".6" stop-color="#EEF2FF"/>
+                    <stop offset="1" stop-color="#BAC8FF"/>
+                  </linearGradient>
+                  <linearGradient id="approveGlass" x1="58" y1="56" x2="96" y2="94">
+                    <stop stop-color="#A8BAFF"/>
+                    <stop offset="1" stop-color="#4A63E6"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+            </span>
+            <b>核准</b>
+          </button>
+        </nav>
+
+        <section id="photoPage" class="page page-photo">
+          <div class="camera-card">
+            <div class="camera-top">
+              <span>随货同行单拍摄</span>
+              <button id="uploadPhoto" class="top-upload">
+                <span class="upload-icon"></span>
+                从相册上传
+              </button>
+            </div>
+            <div class="camera-view">
+              <div class="scan-frame">
+                <i class="corner tl"></i>
+                <i class="corner tr"></i>
+                <i class="corner bl"></i>
+                <i class="corner br"></i>
+                <img class="receipt-shot" src="assets/img/随货同行单.png" alt="随货同行单拍摄画面" />
+                <div class="camera-hint">
+                  <strong>请将随货同行单放入取景框</strong>
+                  <span>保持四角完整、文字清晰、避免反光</span>
+                </div>
+                <button id="takePhoto" class="shutter-button" aria-label="点击拍照">
+                  <span class="shutter-core"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="photo-tray">
+            <div class="tray-title">
+              <strong id="photoCount">已拍票据：0张</strong>
+              <button id="clearPhotos" class="ghost-btn">清空</button>
+            </div>
+            <div id="photoGrid" class="photo-grid">
+              <div class="empty-thumb">票据照片会显示在这里</div>
+            </div>
+          </div>
+
+          <footer class="bottom-bar">
+            <button class="back-btn" disabled>上一步</button>
+            <button id="photoDone" class="next-btn" disabled>完成拍单</button>
+          </footer>
+        </section>
+
+        <section id="scanPage" class="page hidden">
+          <div class="scan-camera-card">
+            <div class="camera-top">
+              <span>追溯码识别</span>
+              <button id="mockScan" class="top-upload">
+                <span class="scan-dot"></span>
+                模拟识别
+              </button>
+            </div>
+            <div class="camera-view scan-camera-view">
+              <div class="scan-frame goods-frame">
+                <i class="corner tl"></i>
+                <i class="corner tr"></i>
+                <i class="corner bl"></i>
+                <i class="corner br"></i>
+                <div class="medicine-scene">
+                  <img class="trace-shot" src="assets/img/追溯码扫描.jpg" alt="追溯码扫描取景画面" />
+                  <div id="scanPulse" class="scan-pulse hidden">
+                    <strong>识别成功</strong>
+                    <span id="lastTraceCode">812600********0123</span>
+                  </div>
+                </div>
+                <div class="camera-hint scan-hint">
+                  <strong>请将药品追溯码朝向摄像头</strong>
+                  <span>识别后自动录入商品、规格、批号和效期</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <section id="scanReviewPanel" class="scan-review-panel hidden"></section>
+
+          <section class="receive-section batch-section">
+            <div class="receive-head">
+              <div>
+                <h2>已录入品批</h2>
+              </div>
+              <label class="receive-search">
+                <input id="scanSearch" placeholder="扫描追溯码或者输入商品信息" />
+              </label>
+              <span id="scanCount" class="receive-total">已录入 0 码</span>
+            </div>
+            <div id="receiveList" class="batch-list"></div>
+          </section>
+
+          <footer class="bottom-bar">
+            <button class="back-btn" data-prev="photo">上一步</button>
+            <button class="next-btn" data-next="approve">完成验货</button>
+          </footer>
+        </section>
+
+        <section id="approvePage" class="page hidden">
+          <section class="approve-section">
+            <div id="approveLoading" class="approve-loading">
+              <div class="loader-ring"></div>
+              <strong>正在智能匹配系统单据</strong>
+              <span>基于随货同行单和实物追溯码，核对账、票、实一致性</span>
+            </div>
+            <div id="approveWorkbench" class="approve-workbench hidden">
+              <div class="approval-swipe-layout">
+                <aside id="approvalQueue" class="approval-queue"></aside>
+                <article class="approval-focus">
+                  <div id="approvalCurrentBody" class="approval-current-body"></div>
+                </article>
+              </div>
+              <div class="approval-actions">
+                <div class="decision-lane defer">
+                  <button id="deferCurrentLine" class="decision-icon-btn defer" aria-label="先不入库">
+                    <span class="decision-icon box-3d" aria-hidden="true">
+                      <svg viewBox="0 0 120 120" fill="none">
+                        <ellipse cx="60" cy="101" rx="34" ry="8" fill="#F39A2E" opacity=".2"/>
+                        <path d="M25 48 60 29l35 19-35 21-35-21Z" fill="url(#deferTop)"/>
+                        <path d="M25 48v35l35 20V69L25 48Z" fill="#FFD18D"/>
+                        <path d="M95 48v35l-35 20V69l35-21Z" fill="url(#deferSide)"/>
+                        <path d="M44 38 79 58" stroke="#F8FAFF" stroke-width="5" stroke-linecap="round" opacity=".85"/>
+                        <defs>
+                          <linearGradient id="deferTop" x1="25" y1="29" x2="95" y2="69"><stop stop-color="#FFE7BD"/><stop offset="1" stop-color="#F39A2E"/></linearGradient>
+                          <linearGradient id="deferSide" x1="60" y1="48" x2="95" y2="103"><stop stop-color="#FFC66F"/><stop offset="1" stop-color="#E68420"/></linearGradient>
+                        </defs>
+                      </svg>
+                    </span>
+                    <strong>先不入库</strong>
+                  </button>
+                  <button class="decision-count-link" data-bucket-open="deferred" id="deferredBucketText">0个商品先不入库，点击查看</button>
+                </div>
+                <div class="decision-lane select">
+                  <button id="selectCurrentLine" class="decision-icon-btn select" aria-label="选择入库">
+                    <span class="decision-icon shelf-3d" aria-hidden="true">
+                      <svg viewBox="0 0 120 120" fill="none">
+                        <ellipse cx="61" cy="102" rx="36" ry="8" fill="#4867F0" opacity=".2"/>
+                        <path d="M25 33h70v58H25V33Z" fill="url(#shelfBody)"/>
+                        <path d="M31 42h58M31 61h58M31 80h58" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" opacity=".8"/>
+                        <rect x="36" y="45" width="14" height="13" rx="4" fill="#FFD38E"/>
+                        <rect x="58" y="45" width="18" height="13" rx="4" fill="#9FB1FF"/>
+                        <rect x="40" y="64" width="20" height="13" rx="4" fill="#9FE2C0"/>
+                        <rect x="67" y="64" width="13" height="13" rx="4" fill="#FFE1A8"/>
+                        <rect x="34" y="83" width="18" height="8" rx="3" fill="#C8D3FF"/>
+                        <rect x="61" y="83" width="24" height="8" rx="3" fill="#FFFFFF" opacity=".72"/>
+                        <defs>
+                          <linearGradient id="shelfBody" x1="25" y1="33" x2="95" y2="91"><stop stop-color="#8DA2FF"/><stop offset=".55" stop-color="#4867F0"/><stop offset="1" stop-color="#314CD1"/></linearGradient>
+                        </defs>
+                      </svg>
+                    </span>
+                    <strong>选择入库</strong>
+                  </button>
+                  <button class="decision-count-link" data-bucket-open="selected" id="selectedBucketText">0个商品选择入库，点击查看</button>
+                </div>
+              </div>
+              <div id="decisionFlyGhost" class="decision-fly-ghost hidden"></div>
+            </div>
+            <div id="approveBucketList" class="approve-bucket-page hidden"></div>
+            <div id="approveBucketDetail" class="approve-bucket-page hidden"></div>
+          </section>
+
+          <footer class="bottom-bar">
+            <button id="approveBackBtn" class="back-btn">上一步</button>
+            <button id="approveBtn" class="next-btn">提交入库</button>
+          </footer>
+        </section>
+      </section>
+    </main>
+
+    <div id="toast" class="toast hidden">入库完成，票据照片、追溯码和核验结果已留痕</div>
+    <script src="app.js?v=compare-images-v3"></script>
+  </body>
+</html>

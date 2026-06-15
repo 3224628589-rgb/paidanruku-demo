@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <defs>
+    <linearGradient id="boxTop" x1="47" y1="54" x2="157" y2="99">
+      <stop stop-color="#FFD89B"/>
+      <stop offset="1" stop-color="#F08A25"/>
+    </linearGradient>
+    <linearGradient id="boxFront" x1="54" y1="87" x2="148" y2="161">
+      <stop stop-color="#FFB95F"/>
+      <stop offset="1" stop-color="#DD6C16"/>
+    </linearGradient>
+    <filter id="shadow" x="25" y="42" width="150" height="130" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="12" stdDeviation="11" flood-color="#D36C18" flood-opacity=".28"/>
+      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#6D3308" flood-opacity=".24"/>
+    </filter>
+  </defs>
+  <ellipse cx="100" cy="164" rx="52" ry="13" fill="#E78523" opacity=".22"/>
+  <g filter="url(#shadow)">
+    <path d="M47 78 100 48l53 30-53 31-53-31Z" fill="url(#boxTop)"/>
+    <path d="M47 78v54l53 31v-54L47 78Z" fill="#F59A35"/>
+    <path d="M153 78v54l-53 31v-54l53-31Z" fill="url(#boxFront)"/>
+    <path d="M74 63 127 94" stroke="#FFF0D2" stroke-width="5" stroke-linecap="round" opacity=".68"/>
+    <path d="M100 109v54" stroke="#BC5A13" stroke-width="5" opacity=".45"/>
+    <path d="M62 94v24M138 94v24" stroke="#FFE0AD" stroke-width="5" stroke-linecap="round" opacity=".48"/>
+  </g>
+</svg>

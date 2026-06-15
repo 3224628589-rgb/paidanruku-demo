@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <defs>
+    <linearGradient id="paper" x1="56" y1="31" x2="139" y2="153">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset=".58" stop-color="#EEF2FF"/>
+      <stop offset="1" stop-color="#BAC8FF"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="98" y1="94" x2="159" y2="156">
+      <stop stop-color="#A8BAFF" stop-opacity=".9"/>
+      <stop offset="1" stop-color="#4A63E6" stop-opacity=".96"/>
+    </linearGradient>
+    <filter id="approveShadow" x="27" y="24" width="150" height="150" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="13" stdDeviation="12" flood-color="#4156D8" flood-opacity=".24"/>
+      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#20296B" flood-opacity=".2"/>
+    </filter>
+  </defs>
+  <ellipse cx="101" cy="165" rx="52" ry="13" fill="#5269EA" opacity=".2"/>
+  <g filter="url(#approveShadow)">
+    <path d="M56 33h70l25 27v80c0 11-9 20-20 20H56c-11 0-20-9-20-20V53c0-11 9-20 20-20Z" fill="url(#paper)"/>
+    <path d="M126 33v26h25" fill="#DDE5FF"/>
+    <path d="M61 76h58M61 98h50M61 120h38" stroke="#8FA0E8" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="126" cy="122" r="32" fill="url(#glass)" fill-opacity=".96"/>
+    <circle cx="126" cy="122" r="21" fill="#EEF3FF" fill-opacity=".18"/>
+    <path d="m149 147 22 22" stroke="#4358D4" stroke-width="13" stroke-linecap="round"/>
+    <path d="m111 123 11 11 24-28" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M72 45h42" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".72"/>
+  </g>
+</svg>
