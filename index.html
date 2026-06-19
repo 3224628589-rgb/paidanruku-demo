@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>掌店易智能入库 - 扫描仪屏 Demo</title>
-    <link rel="stylesheet" href="styles.css?v=compare-images-v3" />
+    <link rel="stylesheet" href="styles.css?v=status-glass-cards-3" />
   </head>
   <body>
     <main class="demo-stage">
@@ -155,10 +155,7 @@
             </div>
           </div>
 
-          <footer class="bottom-bar">
-            <button class="back-btn" disabled>上一步</button>
-            <button id="photoDone" class="next-btn" disabled>完成拍单</button>
-          </footer>
+          <footer class="inbound-progress-footer" data-progress-footer></footer>
         </section>
 
         <section id="scanPage" class="page hidden">
@@ -206,10 +203,7 @@
             <div id="receiveList" class="batch-list"></div>
           </section>
 
-          <footer class="bottom-bar">
-            <button class="back-btn" data-prev="photo">上一步</button>
-            <button class="next-btn" data-next="approve">完成验货</button>
-          </footer>
+          <footer class="inbound-progress-footer" data-progress-footer></footer>
         </section>
 
         <section id="approvePage" class="page hidden">
@@ -226,64 +220,109 @@
                   <div id="approvalCurrentBody" class="approval-current-body"></div>
                 </article>
               </div>
-              <div class="approval-actions">
-                <div class="decision-lane defer">
-                  <button id="deferCurrentLine" class="decision-icon-btn defer" aria-label="先不入库">
-                    <span class="decision-icon box-3d" aria-hidden="true">
-                      <svg viewBox="0 0 120 120" fill="none">
-                        <ellipse cx="60" cy="101" rx="34" ry="8" fill="#F39A2E" opacity=".2"/>
-                        <path d="M25 48 60 29l35 19-35 21-35-21Z" fill="url(#deferTop)"/>
-                        <path d="M25 48v35l35 20V69L25 48Z" fill="#FFD18D"/>
-                        <path d="M95 48v35l-35 20V69l35-21Z" fill="url(#deferSide)"/>
-                        <path d="M44 38 79 58" stroke="#F8FAFF" stroke-width="5" stroke-linecap="round" opacity=".85"/>
-                        <defs>
-                          <linearGradient id="deferTop" x1="25" y1="29" x2="95" y2="69"><stop stop-color="#FFE7BD"/><stop offset="1" stop-color="#F39A2E"/></linearGradient>
-                          <linearGradient id="deferSide" x1="60" y1="48" x2="95" y2="103"><stop stop-color="#FFC66F"/><stop offset="1" stop-color="#E68420"/></linearGradient>
-                        </defs>
-                      </svg>
-                    </span>
-                    <strong>先不入库</strong>
-                  </button>
-                  <button class="decision-count-link" data-bucket-open="deferred" id="deferredBucketText">0个商品先不入库，点击查看</button>
-                </div>
-                <div class="decision-lane select">
-                  <button id="selectCurrentLine" class="decision-icon-btn select" aria-label="选择入库">
-                    <span class="decision-icon shelf-3d" aria-hidden="true">
-                      <svg viewBox="0 0 120 120" fill="none">
-                        <ellipse cx="61" cy="102" rx="36" ry="8" fill="#4867F0" opacity=".2"/>
-                        <path d="M25 33h70v58H25V33Z" fill="url(#shelfBody)"/>
-                        <path d="M31 42h58M31 61h58M31 80h58" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" opacity=".8"/>
-                        <rect x="36" y="45" width="14" height="13" rx="4" fill="#FFD38E"/>
-                        <rect x="58" y="45" width="18" height="13" rx="4" fill="#9FB1FF"/>
-                        <rect x="40" y="64" width="20" height="13" rx="4" fill="#9FE2C0"/>
-                        <rect x="67" y="64" width="13" height="13" rx="4" fill="#FFE1A8"/>
-                        <rect x="34" y="83" width="18" height="8" rx="3" fill="#C8D3FF"/>
-                        <rect x="61" y="83" width="24" height="8" rx="3" fill="#FFFFFF" opacity=".72"/>
-                        <defs>
-                          <linearGradient id="shelfBody" x1="25" y1="33" x2="95" y2="91"><stop stop-color="#8DA2FF"/><stop offset=".55" stop-color="#4867F0"/><stop offset="1" stop-color="#314CD1"/></linearGradient>
-                        </defs>
-                      </svg>
-                    </span>
-                    <strong>选择入库</strong>
-                  </button>
-                  <button class="decision-count-link" data-bucket-open="selected" id="selectedBucketText">0个商品选择入库，点击查看</button>
-                </div>
-              </div>
               <div id="decisionFlyGhost" class="decision-fly-ghost hidden"></div>
             </div>
             <div id="approveBucketList" class="approve-bucket-page hidden"></div>
             <div id="approveBucketDetail" class="approve-bucket-page hidden"></div>
           </section>
 
-          <footer class="bottom-bar">
-            <button id="approveBackBtn" class="back-btn">上一步</button>
-            <button id="approveBtn" class="next-btn">提交入库</button>
-          </footer>
+          <footer class="inbound-progress-footer" data-progress-footer></footer>
+        </section>
+
+        <section id="demoGuidePage" class="page demo-guide-page hidden">
+          <section class="demo-guide-card">
+            <div class="demo-guide-head">
+              <div>
+                <h1>现在和未来的入库差异在哪？</h1>
+                <p>这页用于老板演示：先讲现在为什么痛，再讲未来怎么省人、省心、省错误。</p>
+              </div>
+              <button id="demoGuideBack" class="detail-back">返回核准</button>
+            </div>
+            <div class="demo-guide-visual">
+              <div class="demo-flow-board" aria-label="现在和未来入库流程对比">
+                <div class="demo-flow-column now">
+                  <div class="demo-flow-title">NOW</div>
+                  <div class="demo-flow-row">
+                    <p>通过追溯码、条码、运单号、商品名、供应商等信息找采购单</p>
+                    <b>找单</b>
+                  </div>
+                  <div class="demo-flow-arrow"></div>
+                  <div class="demo-flow-row">
+                    <p>左手翻纸质单，右手核实物，判断随货单和实物是否一致</p>
+                    <b>随货单核准</b>
+                  </div>
+                  <div class="demo-flow-arrow"></div>
+                  <div class="demo-flow-row">
+                    <p>再找系统单商品，录追溯码和批次，必要时逐项核对</p>
+                    <b>系统单核准</b>
+                  </div>
+                  <div class="demo-flow-arrow"></div>
+                  <div class="demo-flow-end">入库</div>
+                </div>
+                <div class="demo-flow-column future">
+                  <div class="demo-flow-title">FUTURE</div>
+                  <div class="demo-flow-row reverse">
+                    <b>拍随货单</b>
+                    <p>开箱找出随货单，高拍仪拍照存档，一页一拍，自动识别商品行</p>
+                  </div>
+                  <div class="demo-flow-arrow"></div>
+                  <div class="demo-flow-row reverse">
+                    <b>扫追溯码</b>
+                    <p>拍完随货单拍商品，批次、数量和实物信息全部归档</p>
+                  </div>
+                  <div class="demo-flow-arrow"></div>
+                  <div class="demo-flow-row reverse">
+                    <b>账实核准</b>
+                    <p>系统匹配采购单、随货单和实物，高亮不一致明细</p>
+                  </div>
+                  <div class="demo-flow-arrow"></div>
+                  <div class="demo-flow-end">入库</div>
+                </div>
+              </div>
+            </div>
+            <div class="demo-guide-pain-list">
+              <article>
+                <b>一个包裹 N 张单，找单还得找商品，实在太麻烦？</b>
+                <span>多方信息综合匹配，无需找单找商品，采购单退居幕后。</span>
+              </article>
+              <article>
+                <b>随货单超厚一沓，实物满满一箱，核对翻不停？</b>
+                <span>流水线拍单扫码，全部转成电子版。</span>
+              </article>
+              <article>
+                <b>包装盒上捉迷藏，猜猜批号藏在哪？</b>
+                <span>追溯码带出实物信息，从此不再找批号。</span>
+              </article>
+              <article>
+                <b>从上游发货核对到美团销售，小屏幕真的装不下大信息？</b>
+                <span>驿站同款高拍仪，信息一目了然。</span>
+              </article>
+              <article>
+                <b>所有字段肉眼核，还在手搓古法入库？</b>
+                <span>系统自动过一遍，只看异常项。</span>
+              </article>
+            </div>
+            <div class="demo-guide-why">
+              <h2>为什么拍单入库是可行的？</h2>
+              <article>
+                <strong>1. 不是构建采购单，而是匹配采购单</strong>
+                <p>对比传统的拍单入库，不需要根据拍单识别结果去整个商品库里精准找到对应商品，只需要在一张平均 20 个商品的单据里匹配到对应商品。</p>
+              </article>
+              <article>
+                <strong>2. 更多信息辅助拍单匹配</strong>
+                <p>拍单中识别的批次信息，可以和追溯码扫描带出的批次信息匹配，也可以和系统早就从三方后台爬下来的批次信息匹配。拍单中数字字母的识别往往更加准确，利用批次数量做匹配更加轻松。</p>
+              </article>
+              <article>
+                <strong>3. 不追求 100%，90% 也有价值</strong>
+                <p>就算拍单结果确实不好，也可以找出疑似拍单匹配结果。无论是根据拍单结果找系统单据，还是根据系统单据找拍单结果，都可以把“大海捞针”变成“非此即彼”。</p>
+              </article>
+            </div>
+          </section>
         </section>
       </section>
     </main>
 
     <div id="toast" class="toast hidden">入库完成，票据照片、追溯码和核验结果已留痕</div>
-    <script src="app.js?v=compare-images-v3"></script>
+    <script src="app.js?v=status-glass-cards-3"></script>
   </body>
 </html>
