@@ -6,10 +6,10 @@ const state = {
   approveKeyword: "",
   approveSearchOpen: false,
   scanReview: null,
-  inboundOrderIds: ["CG260601141", "CG260601138"],
+  inboundOrderIds: [],
   detailOrderId: null,
   approveTimer: null,
-  scanCount: 18,
+  scanCount: 0,
   scanCursor: 0,
   hitBatchId: null,
   hitTraceCode: null,
@@ -22,9 +22,14 @@ const state = {
   approveReady: false,
   approveView: "workbench",
   activeBucket: "selected",
+  expandedProgressOrderIds: new Set(),
+  progressImpactKey: null,
+  progressImpactKeys: new Set(),
+  progressImpactTimer: null,
   bucketDetailLineId: null,
   currentApproveLineId: null,
   approveDecisions: {},
+  confirmedPendingLineIds: new Set(),
   inboundCompletedLineIds: new Set(),
   purchasePickerLineId: null,
   purchaseCandidateIndex: {},
@@ -110,30 +115,7 @@ const orders = [
   }
 ];
 
-const receiveItems = [
-  {
-    id: "batch-amox-a240516",
-    name: "阿莫西林胶囊",
-    spec: "0.25g*24粒",
-    approval: "国药准字H44021987",
-    batch: "A240516",
-    expiry: "2027-09-28",
-    source: "随货单VS实物",
-    status: "ok",
-    codes: ["81260024051600000123", "81260024051600000124"]
-  },
-  {
-    id: "batch-lhqwg-l250108",
-    name: "连花清瘟颗粒",
-    spec: "6g*10袋",
-    approval: "国药准字Z20040063",
-    batch: "L250108",
-    expiry: "2027-11-30",
-    source: "随货单VS实物",
-    status: "ok",
-    codes: ["81260025010800000201"]
-  }
-];
+const receiveItems = [];
 
 const scanEvents = [
   {
@@ -386,12 +368,14 @@ function setStep(step) {
 }
 
 function addPhoto(source) {
+  const beforeCounts = getProgressCountsSnapshot();
   const nextIndex = state.photos.length + 1;
   state.photos.push({
     id: Date.now() + nextIndex,
     title: source === "camera" ? `拍摄票据 ${nextIndex}` : `相册票据 ${nextIndex}`,
     image: "assets/img/随货同行单.png"
   });
+  markProgressIncreases(beforeCounts, ["uninspected"]);
   renderPhotos();
   showToast(source === "camera" ? "拍摄成功" : "上传成功");
 }
@@ -446,8 +430,8 @@ function itemMatchesKeyword(item, keyword) {
 }
 
 function renderReceiveItems() {
-  syncSmartApprovalDecisions();
   const scanCount = receiveItems.reduce((sum, item) => sum + item.codes.length, 0);
+  if (scanCount) syncSmartApprovalDecisions();
   state.scanCount = scanCount;
   const scanCountEl = document.getElementById("scanCount");
   const receiveList = document.getElementById("receiveList");
@@ -464,7 +448,7 @@ function renderReceiveItems() {
     const isUnmatched = item.unmatched || item.id === "batch-unmatched-trace";
     const approvalState = getScanSystemApprovalState(item);
     return `
-    <article class="batch-row ${item.status} ${approvalState.className} ${isUnmatched ? "unmatched" : ""} ${isDamaged ? "damaged" : ""} ${item.id === state.hitBatchId ? "just-hit" : ""}" data-batch-id="${item.id}" style="view-transition-name: ${item.id};">
+    <article class="batch-row ${item.status} ${approvalState.className} ${currentCodes.length ? "has-current-code" : ""} ${isUnmatched ? "unmatched" : ""} ${isDamaged ? "damaged" : ""} ${item.id === state.hitBatchId ? "just-hit" : ""}" data-batch-id="${item.id}" style="view-transition-name: ${item.id};">
       <div>
         <div class="batch-title">
           <strong>${item.name}</strong>
@@ -487,7 +471,7 @@ function renderReceiveItems() {
           <div>
             ${currentCodes.map((code) => `
               <strong class="${code === state.hitTraceCode ? "trace-code-hit" : ""}">
-                ${code}
+                <em>${code}</em>
                 <button data-remove-code="${code}" data-batch-id="${item.id}" aria-label="删除追溯码${code}">×</button>
               </strong>
             `).join("")}
@@ -497,7 +481,7 @@ function renderReceiveItems() {
         <div class="trace-codes">
           ${item.codes.slice(-3).map((code) => `
             <span class="${code === state.hitTraceCode ? "trace-code-hit" : ""}">
-              ${code}
+              <em>${code}</em>
               <button data-remove-code="${code}" data-batch-id="${item.id}" aria-label="删除追溯码${code}">×</button>
             </span>
           `).join("")}
@@ -686,8 +670,44 @@ function renderReceiveItemsWithTransition(previousRects = null) {
   }, 460);
 }
 
-function getApproveLineEntries() {
+function getBaseApproveLineEntries() {
   const realEntries = approveOrders.flatMap((order) => order.lines.map((line) => ({ order, line })));
+  return realEntries;
+}
+
+function getApproveLineEntries() {
+  const realEntries = getBaseApproveLineEntries();
+  const scannedEntries = receiveItems.flatMap((item) => (
+    item.codes.map((code, codeIndex) => {
+      const template = realEntries.find(({ line }) => line.name === item.name && line.batch === item.batch)
+        || realEntries.find(({ line }) => line.status !== "ok")
+        || realEntries[0];
+      const order = {
+        ...template.order,
+        id: template.order.id || `验货扫码-${String(codeIndex + 1).padStart(2, "0")}`
+      };
+      const line = {
+        ...template.line,
+        id: `ap-scan-${code}`,
+        name: item.name,
+        spec: item.spec,
+        approval: item.approval,
+        batch: item.batch,
+        expiry: item.expiry,
+        qty: 1,
+        status: item.status === "ok" && !item.unmatched ? "ok" : "warn",
+        issue: item.status === "ok" && !item.unmatched ? "" : item.source,
+        traceCode: code,
+        receipt: { ...template.line.receipt, name: item.name, spec: item.spec, batch: item.batch, qty: 1 },
+        trace: { ...template.line.trace, name: item.name, spec: item.spec, batch: item.batch, qty: 1 },
+        system: { ...template.line.system, name: item.name, spec: item.spec, batch: item.batch, qty: item.status === "ok" ? 1 : 2 },
+        abnormalFields: item.status === "ok" && !item.unmatched ? [] : (template.line.abnormalFields?.length ? template.line.abnormalFields : ["qty"])
+      };
+      return { order, line };
+    })
+  ));
+  if (scannedEntries.length) return scannedEntries;
+
   const templates = realEntries.filter(({ line }) => line.status !== "ok");
   const demoEntries = approveDemoPendingItems.map(([name, spec, qty], index) => {
     const template = templates[index % templates.length];
@@ -714,13 +734,13 @@ function getApproveLineEntries() {
 
 function ensureApproveWorkflowState() {
   getApproveLineEntries().forEach(({ line }) => {
-    if (!state.approveDecisions[line.id]) {
+    if (!line.id.startsWith("ap-demo-") && !state.approveDecisions[line.id]) {
       state.approveDecisions[line.id] = "pending";
     }
   });
   syncSmartApprovalDecisions();
 
-  const pending = getLinesByDecision("pending");
+  const pending = getActivePendingApprovalEntries();
   if (!pending.some(({ line }) => line.id === state.currentApproveLineId)) {
     state.currentApproveLineId = pending[0]?.line.id || null;
   }
@@ -740,10 +760,11 @@ function isSmartConsistentLine(line) {
 
 function syncSmartApprovalDecisions() {
   getApproveLineEntries().forEach(({ line }) => {
-    if (!state.approveDecisions[line.id]) {
+    if (!state.approveDecisions[line.id] && hasReceivedLine(line)) {
       state.approveDecisions[line.id] = "pending";
     }
     if (!isSmartConsistentLine(line)) return;
+    if (!state.approveDecisions[line.id] && !hasReceivedLine(line)) return;
     state.approveDecisions[line.id] = isLineDamaged(line) ? "pending" : "selected";
   });
 }
@@ -773,6 +794,72 @@ function hasReceivedLine(line) {
   ));
 }
 
+function getReceiptUninspectedGroups() {
+  if (!state.photos.length) return [];
+  const matchedCounts = new Map();
+  receiveItems
+    .filter((item) => item.codes.length)
+    .forEach((item) => {
+      const key = `${item.name}__${item.batch}`;
+      matchedCounts.set(key, (matchedCounts.get(key) || 0) + 1);
+    });
+
+  const baseLines = orders.flatMap((order) => order.lines.map((line, lineIndex) => ({
+    order,
+    line,
+    lineIndex
+  })));
+
+  return state.photos.map((photo, photoIndex) => {
+    const lines = baseLines.map(({ order, line, lineIndex }) => ({
+      id: `receipt-${photo.id}-${order.id}-${lineIndex}`,
+      orderId: order.id,
+      receiptId: `receipt-photo-${photoIndex + 1}`,
+      lineNo: lineIndex + 1,
+      supplier: order.supplier,
+      name: line.name,
+      spec: line.spec,
+      maker: order.supplier,
+      qty: line.qty,
+      batch: line.batch,
+      price: line.price,
+      amount: (Number(line.qty) * Number(line.price || 0)).toFixed(2),
+      status: line.status
+    })).filter((line) => {
+      const key = `${line.name}__${line.batch}`;
+      const matched = matchedCounts.get(key) || 0;
+      if (matched <= 0) return true;
+      matchedCounts.set(key, matched - 1);
+      return false;
+    }).map((line, index) => ({ ...line, lineNo: index + 1 }));
+
+    return {
+      id: `receipt-photo-${photoIndex + 1}`,
+      title: photo.title || `随货同行单 ${photoIndex + 1}`,
+      image: photo.image || "assets/img/随货同行单.png",
+      supplier: lines[0]?.supplier || "广东壹号药业有限公司",
+      lineCount: lines.length,
+      lines
+    };
+  }).filter((receipt) => receipt.lines.length);
+}
+
+function getProgressCountsSnapshot() {
+  const groups = getProgressGroups();
+  return Object.fromEntries(
+    ["uninspected", "pending", "ready", "inbound"].map((key) => [key, groups[key]?.items.length || 0])
+  );
+}
+
+function markProgressIncreases(beforeCounts, keys) {
+  const afterCounts = getProgressCountsSnapshot();
+  keys.forEach((key) => {
+    if ((afterCounts[key] || 0) > (beforeCounts[key] || 0)) {
+      state.progressImpactKeys.add(key);
+    }
+  });
+}
+
 function getProgressGroups() {
   const groups = {
     inbound: {
@@ -780,7 +867,7 @@ function getProgressGroups() {
       label: "已入库",
       bubble: "个商品已入库",
       description: "已经提交入库的清单",
-      icon: "shelf",
+      icon: "assets/icons/progress-inbound.svg",
       items: []
     },
     ready: {
@@ -788,7 +875,7 @@ function getProgressGroups() {
       label: "准入库",
       bubble: "个商品待入库",
       description: "核准通过准备入库的清单",
-      icon: "check",
+      icon: "assets/icons/progress-ready.svg",
       items: []
     },
     pending: {
@@ -796,49 +883,75 @@ function getProgressGroups() {
       label: "待核准",
       bubble: "个商品待核准",
       description: "验货后发现可能存在异常",
-      icon: "alert",
+      icon: "assets/icons/progress-pending.svg",
       items: []
     },
     uninspected: {
       key: "uninspected",
-      label: "未验货",
+      label: "待验货",
       bubble: "个商品未验货",
       description: "拍了单但是没有匹配到验货数据",
-      icon: "scan",
-      items: []
+      icon: "assets/icons/progress-uninspected.svg",
+      items: [],
+      receipts: []
     }
   };
 
-  getApproveLineEntries().forEach(({ order, line }) => {
+  if (!state.photos.length) {
+    return groups;
+  }
+
+  const hasInspection = receiveItems.some((item) => item.codes.length);
+  const includeApprovalDemo = hasInspection && (state.currentStep === "approve" || state.approveReady);
+
+  if (!hasInspection && !includeApprovalDemo && !state.inboundCompletedLineIds.size) {
+    groups.uninspected.receipts = getReceiptUninspectedGroups();
+    groups.uninspected.items = groups.uninspected.receipts.flatMap((receipt) => (
+      receipt.lines.map((line) => ({ receipt, line }))
+    ));
+    return groups;
+  }
+
+  if (hasInspection && !includeApprovalDemo) {
+    getApproveLineEntries().forEach((entry) => {
+      const decision = state.approveDecisions[entry.line.id]
+        || (isSmartConsistentLine(entry.line) ? "selected" : "pending");
+      const target = decision === "selected" ? groups.ready : groups.pending;
+      target.items.push(entry);
+    });
+    groups.uninspected.receipts = getReceiptUninspectedGroups();
+    groups.uninspected.items = groups.uninspected.receipts.flatMap((receipt) => (
+      receipt.lines.map((line) => ({ receipt, line }))
+    ));
+    return groups;
+  }
+
+  const progressEntries = getApproveLineEntries().filter(({ line }) => (
+    includeApprovalDemo || hasReceivedLine(line) || state.inboundCompletedLineIds.has(line.id)
+  ));
+
+  progressEntries.forEach(({ order, line }) => {
     const entry = { order, line };
-    const decision = state.approveDecisions[line.id];
+    const decision = state.approveDecisions[line.id]
+      || (isSmartConsistentLine(line) && hasReceivedLine(line) ? "selected" : "pending");
     if (state.inboundCompletedLineIds.has(line.id)) {
       groups.inbound.items.push(entry);
     } else if (decision === "selected") {
       groups.ready.items.push(entry);
-    } else if (hasReceivedLine(line)) {
-      groups.pending.items.push(entry);
-    } else {
-      groups.uninspected.items.push(entry);
+    } else if (decision === "pending" || decision === "deferred") {
+      groups.pending.items.push({
+        order: entry.order,
+        line: state.confirmedPendingLineIds.has(line.id)
+          ? { ...entry.line, issue: entry.line.issue || "已明确留在待核准栏" }
+          : entry.line
+      });
     }
   });
 
-  receiveItems
-    .filter((item) => (item.unmatched || item.id === "batch-unmatched-trace") && item.codes.length)
-    .forEach((item) => {
-      groups.pending.items.push({
-        order: { id: "未匹配采购单", supplier: "码上放心未返回商品资料" },
-        line: {
-          id: item.id,
-          name: item.name,
-          spec: item.spec,
-          batch: item.batch,
-          qty: item.codes.length,
-          status: "warn",
-          issue: "没有找到商品信息"
-        }
-      });
-    });
+  groups.uninspected.receipts = getReceiptUninspectedGroups();
+  groups.uninspected.items = groups.uninspected.receipts.flatMap((receipt) => (
+    receipt.lines.map((line) => ({ receipt, line }))
+  ));
 
   return groups;
 }
@@ -847,78 +960,132 @@ function renderInboundProgress() {
   const footers = document.querySelectorAll("[data-progress-footer]");
   if (!footers.length) return;
   const groups = getProgressGroups();
-  const orderedGroups = [groups.pending, groups.ready, groups.uninspected, groups.inbound];
+  const orderedGroups = [groups.uninspected, groups.pending, groups.ready, groups.inbound];
+  const totalCount = orderedGroups.reduce((total, group) => total + group.items.length, 0) || 1;
+  const impactKeys = new Set(state.progressImpactKeys);
   const cardHtml = orderedGroups.map((group) => {
+    const isImpact = impactKeys.has(group.key);
     return `
-    <button class="progress-bubble ${group.key}" data-progress-open="${group.key}" aria-label="查看${group.label}商品">
-      <i class="progress-icon ${group.icon}" aria-hidden="true"></i>
-      <span><b>${group.label}${group.items.length}</b><em>${group.description}</em></span>
+    <button class="progress-bubble ${group.key} ${isImpact ? "bucket-impact" : ""}" data-progress-open="${group.key}" aria-label="查看${group.label}商品">
+      <span class="progress-icon-shell" aria-hidden="true">
+        <img class="progress-icon" src="${group.icon}" alt="" />
+      </span>
+      <span class="progress-copy">
+        <b>${group.items.length}</b>
+        <em>${group.label}</em>
+      </span>
     </button>
   `;
   }).join("");
+  const trackHtml = orderedGroups.map((group) => {
+    const width = (group.items.length / totalCount) * 100;
+    const chargeClass = group.key === "ready" || group.key === "inbound" ? "charge-left" : "charge-right";
+    return `<button class="progress-segment ${group.key} ${chargeClass} ${group.items.length ? "" : "empty"} ${impactKeys.has(group.key) ? "charging" : ""}" style="--segment-width:${width}%" data-progress-open="${group.key}" aria-label="查看${group.label}商品"></button>`;
+  }).join("");
+  const dropletHtml = Array.from({ length: 14 }, (_, index) => `<i style="--drop-index:${index}"></i>`).join("");
 
   footers.forEach((footer) => {
+    const isApproveFooter = footer.closest("#approvePage");
+    const showApprovalPrompts = Boolean(isApproveFooter && state.currentStep === "approve" && state.approveReady && state.approveView === "workbench");
+    const canDropApproval = Boolean(showApprovalPrompts && getCurrentApproveEntry());
+    isApproveFooter?.classList.toggle("approval-bubbles-visible", showApprovalPrompts);
     footer.innerHTML = `
+      ${showApprovalPrompts ? `
+        <div class="approval-drop-prompts ${canDropApproval ? "" : "disabled"}" aria-label="核准快捷动作">
+          <button class="approve-drop-cta pending" data-approve-drop="pending" ${canDropApproval ? "" : "disabled"}>
+            <span class="cta-icon pending-icon" aria-hidden="true">
+              <img class="pending-gloss" src="assets/icons/approval-bubble-pending-gloss.svg" alt="" />
+              <b>?</b>
+            </span>
+            <span class="cta-copy">
+              <strong class="cta-badge">核准待定</strong>
+              <em>留在待核准栏，随后回头再核</em>
+            </span>
+            <span class="bubble-drops" aria-hidden="true">${dropletHtml}</span>
+          </button>
+          <button class="approve-drop-cta ready" data-approve-drop="selected" ${canDropApproval ? "" : "disabled"}>
+            <span class="cta-icon ready-icon" aria-hidden="true">
+              <b></b>
+            </span>
+            <span class="cta-copy">
+              <strong class="cta-badge">核准完毕</strong>
+              <em>放入准入库栏，随后批量入库</em>
+            </span>
+            <span class="bubble-drops" aria-hidden="true">${dropletHtml}</span>
+          </button>
+        </div>
+      ` : ""}
       <div class="progress-card">
         <div class="progress-bubbles">${cardHtml}</div>
+        <div class="progress-rail" aria-hidden="true">
+          <div class="progress-track">${trackHtml}</div>
+        </div>
       </div>
     `;
   });
+  if (impactKeys.size) {
+    window.clearTimeout(state.progressImpactTimer);
+    state.progressImpactTimer = window.setTimeout(() => {
+      document.querySelectorAll(".progress-bubble.bucket-impact, .progress-segment.charging").forEach((item) => {
+        item.classList.remove("bucket-impact", "charging");
+      });
+      state.progressImpactKey = null;
+      state.progressImpactKeys.clear();
+    }, 1050);
+  }
 
   document.querySelectorAll("[data-progress-open]").forEach((button) => {
     button.addEventListener("click", () => openProgressDetail(button.dataset.progressOpen));
   });
+  document.querySelectorAll("[data-approve-drop]").forEach((button) => {
+    button.addEventListener("click", () => {
+      if (button.closest(".approval-drop-prompts")?.classList.contains("bursting")) return;
+      playApprovalBubbleBurst(button);
+      window.setTimeout(() => decideCurrentApproveLine(button.dataset.approveDrop), 120);
+    });
+  });
 }
 
 function openProgressDetail(key) {
-  const groups = getProgressGroups();
-  const group = key === "all"
-    ? {
-      key: "all",
-      label: "全部拍单",
-      bubble: "件拍单商品",
-      items: [groups.inbound, groups.ready, groups.pending, groups.uninspected].flatMap((item) => item.items)
-    }
-    : groups[key];
-  if (!group) return;
-  const modal = ensureApprovalModal();
-  modal.innerHTML = `
-    <div class="approval-modal-backdrop" data-modal-close></div>
-    <section class="approval-modal-sheet progress-detail-sheet">
-      <button class="modal-close" data-modal-close aria-label="关闭">×</button>
-      <header class="modal-head">
-        <strong>${group.label}商品明细</strong>
-        <span>${group.items.length}${group.bubble}</span>
-      </header>
-      <div class="progress-detail-list">
-        ${group.items.length ? group.items.map(({ order, line }) => `
-          <article class="progress-detail-item ${key}">
-            <div>
-              <strong>${line.name}</strong>
-              <span>${line.spec}</span>
-            </div>
-            <p>
-              <span>数量 ${line.qty}</span>
-              <span>批次 ${line.batch}</span>
-              <span>${order.id}</span>
-            </p>
-          </article>
-        `).join("") : `<div class="progress-empty">暂无${group.label}商品</div>`}
-      </div>
-    </section>
-  `;
-  modal.classList.remove("hidden");
-  modal.querySelectorAll("[data-modal-close]").forEach((button) => {
-    button.addEventListener("click", closeApprovalModal);
+  if (!getProgressGroups()[key]) return;
+  state.activeBucket = key;
+  state.bucketDetailLineId = null;
+  initializeProgressPageExpansion(key);
+  state.approveReady = true;
+  setStep("approve");
+  showApproveView("bucketList");
+  renderApprovalBucketList();
+  renderInboundProgress();
+}
+
+function playApprovalBubbleBurst(button) {
+  const prompts = button.closest(".approval-drop-prompts");
+  prompts?.classList.add("bursting");
+  prompts?.querySelectorAll(".approve-drop-cta").forEach((item) => {
+    item.classList.add("burst-target");
+    item.classList.toggle("burst-away", item !== button);
   });
+}
+
+function initializeProgressPageExpansion(key) {
+  state.expandedProgressOrderIds = new Set();
+  if (key === "uninspected") {
+    getReceiptUninspectedGroups().forEach((receipt) => state.expandedProgressOrderIds.add(receipt.id));
+    return;
+  }
+  getGroupedOrdersByDecision(key).forEach((order) => state.expandedProgressOrderIds.add(order.id));
 }
 
 function getLinesByDecision(decision) {
   return getApproveLineEntries().filter(({ line }) => state.approveDecisions[line.id] === decision);
 }
 
+function getActivePendingApprovalEntries() {
+  return getLinesByDecision("pending").filter(({ line }) => !state.confirmedPendingLineIds.has(line.id));
+}
+
 function getCurrentApproveEntry() {
-  const pending = getLinesByDecision("pending");
+  const pending = getActivePendingApprovalEntries();
   return pending.find(({ line }) => line.id === state.currentApproveLineId) || pending[0] || null;
 }
 
@@ -971,7 +1138,7 @@ function renderApprovalQueue() {
   const queue = document.getElementById("approvalQueue");
   if (!queue) return;
 
-  const lines = getLinesByDecision("pending");
+  const lines = getActivePendingApprovalEntries();
   const visibleLines = lines.filter(({ line }) => itemMatchesKeyword({
     ...line,
     codes: buildTraceCodes(line)
@@ -1004,6 +1171,32 @@ function renderApprovalQueue() {
       state.purchasePickerLineId = null;
       state.receiptPickerLineId = null;
       renderApproveWorkbench();
+    });
+  });
+}
+
+function getApprovalQueueItemRects() {
+  return new Map(Array.from(document.querySelectorAll("#approvalQueue .queue-item")).map((item) => [
+    item.dataset.queueLineId,
+    item.getBoundingClientRect()
+  ]));
+}
+
+function animateApprovalQueueShift(previousRects) {
+  if (!previousRects?.size) return;
+  document.querySelectorAll("#approvalQueue .queue-item").forEach((item) => {
+    const previous = previousRects.get(item.dataset.queueLineId);
+    if (!previous) return;
+    const next = item.getBoundingClientRect();
+    const deltaX = previous.left - next.left;
+    const deltaY = previous.top - next.top;
+    if (Math.abs(deltaX) < 1 && Math.abs(deltaY) < 1) return;
+    item.animate([
+      { transform: `translate3d(${deltaX}px, ${deltaY}px, 0)` },
+      { transform: "translate3d(0, 0, 0)" }
+    ], {
+      duration: 280,
+      easing: "cubic-bezier(.2,.8,.2,1)"
     });
   });
 }
@@ -1113,7 +1306,9 @@ function renderApprovalCompareTable(review, line, options = {}) {
             ${state.approvalNormalExpanded ? "收起全部字段" : "展开全部字段"}
           </button>
         ` : `
-        <div class="compare-cell compare-field ${row.abnormal ? "abnormal" : ""}">${row.label}</div>
+        <div class="compare-cell compare-field ${row.abnormal ? "abnormal" : ""}">
+          <span>${row.label}</span>
+        </div>
         ${renderCompareValueCell(row, "physical", review.physical)}
         ${options.purchasePickerOpen ? (index === 0 ? renderCompareCandidateColumn("purchase", review.purchaseCandidates, line, rows.length) : "") : renderCompareValueCell(row, "purchase", review.purchase)}
         ${options.receiptPickerOpen ? (index === 0 ? renderCompareCandidateColumn("receipt", review.receiptCandidates, line, rows.length) : "") : renderCompareValueCell(row, "receipt", review.receipt)}
@@ -1229,30 +1424,32 @@ function renderMeituanApprovalBlock(meituan, line) {
   return `
     <div class="meituan-bottom-body">
       <div class="meituan-standard-copy">
-        <b>美团商品信息</b>
+        <b class="meituan-section-title">美团商品信息</b>
         <div class="meituan-title-line">
           <span>OTC</span>
           <strong>${meituan.saleName}</strong>
         </div>
-        <div class="meituan-compact-facts">
-          <span>国药准字${meituan.approval.replace(/^国药准字/, "")}</span>
-          <span>${barcode}</span>
-          <span>${meituan.manufacturer}</span>
-          <span>折后价/原价：${meituan.discountPrice}/${meituan.originalPrice}</span>
-        </div>
+        <dl class="meituan-fact-list">
+          <div><dt>批准文号</dt><dd>国药准字 ${meituan.approval.replace(/^国药准字/, "")}</dd></div>
+          <div><dt>条形码</dt><dd>${barcode}</dd></div>
+          <div class="meituan-price-fact">
+            <dt>折后价 / 原价</dt>
+            <dd>
+              <strong>￥${meituan.discountPrice}</strong>
+              <span class="meituan-original-price">￥${meituan.originalPrice}</span>
+              <em>24% OFF</em>
+            </dd>
+          </div>
+          <div><dt>生产厂家</dt><dd>${meituan.manufacturer}</dd></div>
+        </dl>
       </div>
       <div class="meituan-image-rail">
-        <button class="meituan-main-image" data-approval-modal="gallery" data-line-id="${line.id}" data-gallery-index="0" aria-label="查看美团商品主图">
-          <img src="${meituan.images[0].src}" alt="美团商品主图" />
-        </button>
-        <div class="meituan-mini-gallery">
-          ${meituan.images.slice(1, 3).map((image, index) => `
-            <button data-approval-modal="gallery" data-line-id="${line.id}" data-gallery-index="${index + 1}" aria-label="查看美团商品图${index + 2}">
-              <img src="${image.src}" alt="美团商品图${index + 2}" />
+        ${meituan.images.slice(0, 6).map((image, index) => `
+            <button class="meituan-gallery-item" data-approval-modal="gallery" data-line-id="${line.id}" data-gallery-index="${index}" aria-label="查看美团商品图${index + 1}">
+              <img src="${image.src}" alt="美团商品图${index + 1}" />
               <em>${image.label}</em>
             </button>
           `).join("")}
-        </div>
       </div>
     </div>
   `;
@@ -1712,39 +1909,81 @@ function decideCurrentApproveLine(decision) {
   if (!current || state.approveDecisions[current.line.id] !== "pending") return;
 
   const oldId = current.line.id;
-  animateDecisionDrop(decision, () => {
+  const previousQueueRects = getApprovalQueueItemRects();
+  let decisionApplied = false;
+  const applyDecision = () => {
+    if (decisionApplied) return;
+    decisionApplied = true;
+    if (decision === "pending") state.confirmedPendingLineIds.add(oldId);
     state.approveDecisions[oldId] = decision;
     state.purchasePickerLineId = null;
     state.receiptPickerLineId = null;
-    const nextPending = getLinesByDecision("pending").find(({ line }) => line.id !== oldId);
+    const nextPending = getActivePendingApprovalEntries().find(({ line }) => line.id !== oldId);
     state.currentApproveLineId = nextPending?.line.id || null;
 
     const workbench = document.getElementById("approveWorkbench");
     workbench?.classList.remove("swipe-next");
     void workbench?.offsetWidth;
     workbench?.classList.add("swipe-next");
-    showToast(decision === "selected" ? "已加入选择入库，自动切到下一条" : "已暂不入库，自动切到下一条");
     renderApproveWorkbench();
-  });
+    animateApprovalQueueShift(previousQueueRects);
+  };
+
+  animateDecisionDrop(decision, () => {
+    applyDecision();
+    showToast(decision === "selected" ? "已放入准入库栏，自动切到下一条" : "已保留在待核准，自动切到下一条");
+    triggerProgressBucketImpact(decision === "selected" ? "ready" : "pending");
+  }, applyDecision);
 }
 
-function animateDecisionDrop(decision, onDone) {
+function getApprovalDropTarget(decision) {
+  const progressKey = decision === "selected" ? "ready" : "pending";
+  return document.querySelector(`#approvePage [data-progress-open="${progressKey}"].progress-bubble`)
+    || document.querySelector(`#approvePage .progress-bubble.${progressKey}`)
+    || document.getElementById(decision === "selected" ? "selectCurrentLine" : "deferCurrentLine");
+}
+
+function triggerProgressBucketImpact(progressKey) {
+  state.progressImpactKey = progressKey;
+  state.progressImpactKeys.add(progressKey);
+  const targets = document.querySelectorAll(`.progress-bubble.${progressKey}, .progress-segment.${progressKey}`);
+  targets.forEach((target) => {
+    target.classList.remove("bucket-impact", "charging");
+    void target.offsetWidth;
+    target.classList.add(target.classList.contains("progress-segment") ? "charging" : "bucket-impact");
+  });
+  window.clearTimeout(state.progressImpactTimer);
+  state.progressImpactTimer = window.setTimeout(() => {
+    targets.forEach((target) => target.classList.remove("bucket-impact", "charging"));
+    if (state.progressImpactKey === progressKey) state.progressImpactKey = null;
+    state.progressImpactKeys.delete(progressKey);
+  }, 1000);
+}
+
+function animateDecisionDrop(decision, onDone, onLift) {
   const currentButton = document.querySelector(".queue-item.current");
-  const from = currentButton?.getBoundingClientRect();
-  const targetButton = document.getElementById(decision === "selected" ? "selectCurrentLine" : "deferCurrentLine");
+  const sourceElement = currentButton || document.querySelector("#approvePage .inbound-card");
+  const from = sourceElement?.getBoundingClientRect();
+  const targetButton = getApprovalDropTarget(decision);
   const to = targetButton?.getBoundingClientRect();
-  const targetLane = targetButton?.closest(".decision-lane");
+  const targetLane = targetButton?.closest(".decision-lane") || targetButton;
   const ghost = document.getElementById("decisionFlyGhost");
   if (!from || !to || !ghost || !targetButton) {
+    onLift?.();
     onDone();
     return;
   }
 
-  ghost.textContent = document.querySelector(".queue-item.current strong")?.textContent || "商品";
+  ghost.textContent = currentButton?.querySelector("strong")?.textContent
+    || document.querySelector("#approvePage .inbound-order-head b")?.textContent
+    || "商品";
   const flyX = to.left + to.width / 2 - (from.left + from.width / 2);
   const flyY = to.top + to.height / 2 - (from.top + from.height / 2);
-  ghost.style.left = `${from.left + from.width / 2 - 52}px`;
-  ghost.style.top = `${from.top + from.height / 2 - 16}px`;
+  ghost.style.left = `${from.left}px`;
+  ghost.style.top = `${from.top}px`;
+  ghost.style.width = `${from.width}px`;
+  ghost.style.height = `${from.height}px`;
+  ghost.style.borderRadius = window.getComputedStyle(sourceElement).borderRadius;
   ghost.style.setProperty("--fly-x", `${flyX}px`);
   ghost.style.setProperty("--fly-y", `${flyY}px`);
   ghost.style.setProperty("--fly-1x", `${flyX * 0.18}px`);
@@ -1754,28 +1993,39 @@ function animateDecisionDrop(decision, onDone) {
   ghost.style.setProperty("--fly-3x", `${flyX * 0.86}px`);
   ghost.style.setProperty("--fly-3y", `${flyY * 0.78}px`);
   ghost.style.setProperty("--fly-impact-y", `${flyY + 6}px`);
-  ghost.classList.remove("hidden", "flying", "select", "defer");
+  ghost.classList.remove("hidden", "flying", "select", "defer", "from-queue");
   ghost.classList.add(decision === "selected" ? "select" : "defer");
-  targetButton.classList.remove("jelly", "liquid-impact");
-  targetLane?.classList.remove("splashing");
-  currentButton?.classList.add("deciding");
+  if (currentButton) ghost.classList.add("from-queue");
+  targetButton.classList.remove("jelly", "liquid-impact", "bucket-impact");
+  targetLane?.classList.remove("splashing", "bucket-impact");
+  sourceElement?.classList.add("deciding");
   void ghost.offsetWidth;
   ghost.classList.add("flying");
 
+  window.requestAnimationFrame(() => {
+    onLift?.();
+  });
+
   window.setTimeout(() => {
-    targetButton.classList.add("jelly", "liquid-impact");
-    targetLane?.classList.add("splashing");
-  }, 560);
+    const latestTarget = getApprovalDropTarget(decision);
+    const latestLane = latestTarget?.closest(".decision-lane") || latestTarget;
+    latestTarget?.classList.add("jelly", "liquid-impact", "bucket-impact");
+    latestLane?.classList.add("splashing");
+  }, 300);
 
   window.setTimeout(() => {
     ghost.classList.add("hidden");
+    sourceElement?.classList.remove("deciding");
+    state.progressImpactKey = decision === "selected" ? "ready" : "pending";
     onDone();
-  }, 760);
+  }, 460);
 
   window.setTimeout(() => {
-    targetButton.classList.remove("jelly", "liquid-impact");
-    targetLane?.classList.remove("splashing");
-  }, 1450);
+    const latestTarget = getApprovalDropTarget(decision);
+    const latestLane = latestTarget?.closest(".decision-lane") || latestTarget;
+    latestTarget?.classList.remove("jelly", "liquid-impact", "bucket-impact");
+    latestLane?.classList.remove("splashing", "bucket-impact");
+  }, 1000);
 }
 
 function showApproveView(view) {
@@ -1785,18 +2035,34 @@ function showApproveView(view) {
   document.getElementById("approveBucketDetail")?.classList.toggle("hidden", view !== "bucketDetail");
 }
 
+function returnToApproveWorkbench() {
+  state.approveReady = true;
+  showApproveView("workbench");
+  renderApproveWorkbench();
+}
+
 function openDecisionBucket(decision) {
   state.activeBucket = decision;
+  initializeProgressPageExpansion(decision);
   showApproveView("bucketList");
   renderApprovalBucketList();
+  renderInboundProgress();
 }
 
 function renderApprovalBucketList() {
   const bucket = document.getElementById("approveBucketList");
   if (!bucket) return;
-  const decision = state.activeBucket;
-  const title = getDecisionLabel(decision);
-  const filteredOrders = getGroupedOrdersByDecision(decision);
+  const key = state.activeBucket;
+  if (key === "uninspected") {
+    renderUninspectedReceiptBucketList(bucket);
+    return;
+  }
+
+  const title = getDecisionLabel(key);
+  const filteredOrders = getGroupedOrdersByDecision(key);
+  if (filteredOrders.length && !filteredOrders.some((order) => state.expandedProgressOrderIds.has(order.id))) {
+    state.expandedProgressOrderIds.add(filteredOrders[0].id);
+  }
 
   bucket.innerHTML = `
     <div class="bucket-head">
@@ -1805,21 +2071,26 @@ function renderApprovalBucketList() {
         <h1>${title}</h1>
         <p>${filteredOrders.reduce((sum, order) => sum + order.lines.length, 0)}个商品 · 按采购单汇总</p>
       </div>
+      ${key === "ready" ? `
+        <button class="bucket-submit-inbound" data-submit-ready-inbound ${filteredOrders.length ? "" : "disabled"}>
+          提交入库
+        </button>
+      ` : ""}
     </div>
-    <div class="bucket-order-list">
+    <div class="bucket-order-list progress-bucket-list">
       ${filteredOrders.length ? filteredOrders.map((order) => `
-        <article class="bucket-order-card">
-          <div class="bucket-order-row">
+        <article class="bucket-order-card ${state.expandedProgressOrderIds.has(order.id) ? "expanded" : ""}">
+          <button class="bucket-order-row" data-progress-order-toggle="${order.id}" aria-expanded="${state.expandedProgressOrderIds.has(order.id) ? "true" : "false"}">
             <div>
               <strong>${order.id}</strong>
               <span>${order.supplier}</span>
             </div>
             <time>${order.date}</time>
-            <em>${order.status}</em>
-          </div>
-          <div class="bucket-lines">
+            <em>${order.lines.length}行</em>
+          </button>
+          <div class="bucket-lines ${state.expandedProgressOrderIds.has(order.id) ? "expanded" : ""}">
             ${order.lines.map((line) => `
-              <button class="bucket-line-row ${line.status}" data-bucket-detail="${line.id}">
+              <article class="bucket-line-row ${line.status}">
                 <div class="line-copy">
                   <strong>${line.name}</strong>
                   <span>${line.spec}</span>
@@ -1831,7 +2102,8 @@ function renderApprovalBucketList() {
                   <span>数量 ${line.qty}</span>
                 </div>
                 ${line.issue ? `<p>${line.issue}</p>` : `<p>随货同行单、追溯码实物、系统单据完全一致</p>`}
-              </button>
+                <button class="line-detail-link" data-bucket-detail="${line.id}">查看核对详情</button>
+              </article>
             `).join("")}
           </div>
         </article>
@@ -1839,7 +2111,19 @@ function renderApprovalBucketList() {
     </div>
   `;
 
-  bucket.querySelector("[data-bucket-back]")?.addEventListener("click", () => showApproveView("workbench"));
+  bucket.querySelector("[data-bucket-back]")?.addEventListener("click", returnToApproveWorkbench);
+  bucket.querySelector("[data-submit-ready-inbound]")?.addEventListener("click", submitReadyBucketToInbound);
+  bucket.querySelectorAll("[data-progress-order-toggle]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const id = button.dataset.progressOrderToggle;
+      if (state.expandedProgressOrderIds.has(id)) {
+        state.expandedProgressOrderIds.delete(id);
+      } else {
+        state.expandedProgressOrderIds.add(id);
+      }
+      renderApprovalBucketList();
+    });
+  });
   bucket.querySelectorAll("[data-bucket-detail]").forEach((button) => {
     button.addEventListener("click", () => {
       state.bucketDetailLineId = button.dataset.bucketDetail;
@@ -1849,10 +2133,96 @@ function renderApprovalBucketList() {
   });
 }
 
+function submitReadyBucketToInbound() {
+  const readyEntries = getProgressGroups().ready.items;
+  if (!readyEntries.length) {
+    showToast("准入库暂无可提交明细");
+    return;
+  }
+  const beforeCounts = getProgressCountsSnapshot();
+  readyEntries.forEach(({ line }) => state.inboundCompletedLineIds.add(line.id));
+  markProgressIncreases(beforeCounts, ["inbound"]);
+  initializeProgressPageExpansion("ready");
+  renderApprovalBucketList();
+  renderInboundProgress();
+  showToast(`已提交 ${readyEntries.length} 条准入库明细`);
+}
+
+function renderUninspectedReceiptBucketList(bucket) {
+  const receipts = getReceiptUninspectedGroups();
+  if (receipts.length && !receipts.some((receipt) => state.expandedProgressOrderIds.has(receipt.id))) {
+    state.expandedProgressOrderIds.add(receipts[0].id);
+  }
+
+  bucket.innerHTML = `
+    <div class="bucket-head">
+      <button class="detail-back" data-bucket-back="workbench">返回</button>
+      <div>
+        <h1>待验货</h1>
+        <p>${receipts.reduce((sum, receipt) => sum + receipt.lines.length, 0)}行未被追溯码匹配 · 按随货单图片汇总</p>
+      </div>
+    </div>
+    <div class="bucket-order-list progress-bucket-list receipt-bucket-list">
+      ${receipts.length ? receipts.map((receipt) => `
+        <article class="receipt-bucket-card ${state.expandedProgressOrderIds.has(receipt.id) ? "expanded" : ""}">
+          <button class="receipt-summary-row" data-progress-order-toggle="${receipt.id}" aria-expanded="${state.expandedProgressOrderIds.has(receipt.id) ? "true" : "false"}">
+            <img src="${receipt.image}" alt="${receipt.title}" />
+            <div>
+              <strong>${receipt.title}</strong>
+              <span>供应商：${receipt.supplier}</span>
+              <span>未验货行：${receipt.lineCount}行</span>
+            </div>
+            <em>${state.expandedProgressOrderIds.has(receipt.id) ? "收起" : "展开"}</em>
+          </button>
+          <div class="receipt-ocr-lines ${state.expandedProgressOrderIds.has(receipt.id) ? "expanded" : ""}">
+            ${receipt.lines.map((line) => `
+              <article class="receipt-ocr-row">
+                <b>第${line.lineNo}行</b>
+                <div>
+                  <strong>${line.name}</strong>
+                  <span>${line.spec}</span>
+                </div>
+                <p>
+                  <span>厂家 ${line.maker}</span>
+                  <span>数量 ${line.qty}</span>
+                  <span>批次 ${line.batch}</span>
+                  <span>单价 ${line.price}</span>
+                  <span>金额 ${line.amount}</span>
+                </p>
+              </article>
+            `).join("")}
+          </div>
+        </article>
+      `).join("") : `<div class="approval-empty-card">没有待验货的随货单行</div>`}
+    </div>
+  `;
+
+  bucket.querySelector("[data-bucket-back]")?.addEventListener("click", returnToApproveWorkbench);
+  bucket.querySelectorAll("[data-progress-order-toggle]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const id = button.dataset.progressOrderToggle;
+      if (state.expandedProgressOrderIds.has(id)) {
+        state.expandedProgressOrderIds.delete(id);
+      } else {
+        state.expandedProgressOrderIds.add(id);
+      }
+      renderApprovalBucketList();
+    });
+  });
+}
+
 function getGroupedOrdersByDecision(decision) {
+  const progressKey = {
+    inbound: "inbound",
+    ready: "ready",
+    pending: "pending",
+    selected: "ready"
+  }[decision];
   const grouped = new Map();
-  getApproveLineEntries().forEach(({ order, line }) => {
-    if (state.approveDecisions[line.id] !== decision) return;
+  const entries = progressKey
+    ? getProgressGroups()[progressKey].items
+    : getApproveLineEntries().filter(({ line }) => state.approveDecisions[line.id] === decision);
+  entries.forEach(({ order, line }) => {
     if (!grouped.has(order.id)) {
       grouped.set(order.id, { ...order, lines: [] });
     }
@@ -1864,14 +2234,32 @@ function getGroupedOrdersByDecision(decision) {
 function renderApprovalBucketDetail() {
   const detail = document.getElementById("approveBucketDetail");
   if (!detail) return;
-  const entry = getApproveLineEntries().find(({ line }) => line.id === state.bucketDetailLineId);
-  if (!entry) return;
+  const groups = getProgressGroups();
+  const entry = (groups[state.activeBucket]?.items || []).find(({ line }) => line.id === state.bucketDetailLineId)
+    || getApproveLineEntries().find(({ line }) => line.id === state.bucketDetailLineId);
+  if (!entry || !entry.line.system) {
+    detail.innerHTML = `
+      <div class="bucket-head">
+        <button class="detail-back" data-bucket-list-back>返回</button>
+        <div>
+          <h1>核对详情</h1>
+          <p>该条暂无三方核对快照</p>
+        </div>
+      </div>
+      <div class="approval-empty-card">没有可追溯的核准详情</div>
+    `;
+    detail.querySelector("[data-bucket-list-back]")?.addEventListener("click", () => {
+      showApproveView("bucketList");
+      renderApprovalBucketList();
+    });
+    return;
+  }
   detail.innerHTML = `
     <div class="bucket-head">
       <button class="detail-back" data-bucket-list-back>返回</button>
       <div>
-        <h1>${entry.line.name}</h1>
-        <p>${entry.order.id} · ${entry.order.supplier}</p>
+        <h1>${entry.line.name}核对详情</h1>
+        <p>${getDecisionLabel(state.activeBucket)}快照 · ${entry.order.id} · ${entry.order.supplier}</p>
       </div>
     </div>
     <div class="bucket-detail-body">
@@ -1887,9 +2275,12 @@ function renderApprovalBucketDetail() {
 
 function getDecisionLabel(decision) {
   return {
+    inbound: "已入库",
+    ready: "准入库",
+    uninspected: "待验货",
     pending: "待核准",
     deferred: "暂不入库",
-    selected: "选择入库"
+    selected: "准入库"
   }[decision] || "待核准";
 }
 
@@ -2074,7 +2465,7 @@ document.getElementById("approveBackBtn")?.addEventListener("click", () => {
     return;
   }
   if (state.currentStep === "approve" && state.approveView === "bucketList") {
-    showApproveView("workbench");
+    returnToApproveWorkbench();
     return;
   }
   setStep("scan");
@@ -2103,6 +2494,11 @@ document.querySelectorAll(".step").forEach((button) => {
     const target = button.dataset.step;
     if ((target === "scan" || target === "approve") && !state.photos.length) {
       showToast("请先拍摄或上传随货同行单");
+      return;
+    }
+    if (target === "approve" && !receiveItems.some((item) => item.codes.length)) {
+      showToast("请先完成验货扫码");
+      setStep("scan");
       return;
     }
     setStep(target);
@@ -2166,10 +2562,13 @@ function prioritizeScannedItems(scannedItems) {
 }
 
 document.getElementById("mockScan").addEventListener("click", () => {
+  const beforeCounts = getProgressCountsSnapshot();
   const events = buildMockScanBatch();
   const previousRects = getBatchRowRects();
   const scannedItems = events.map(upsertScannedEvent);
   prioritizeScannedItems(scannedItems);
+  syncSmartApprovalDecisions();
+  markProgressIncreases(beforeCounts, ["pending", "ready"]);
   const lastEvent = events[events.length - 1];
   const lastItem = scannedItems[scannedItems.length - 1];
 
@@ -2206,7 +2605,9 @@ document.getElementById("mockScan").addEventListener("click", () => {
 
 document.getElementById("approveBtn")?.addEventListener("click", () => {
   const selectedCount = getLinesByDecision("selected").length;
+  const beforeCounts = getProgressCountsSnapshot();
   getLinesByDecision("selected").forEach(({ line }) => state.inboundCompletedLineIds.add(line.id));
+  markProgressIncreases(beforeCounts, ["inbound"]);
   renderInboundProgress();
   showToast(`已提交 ${selectedCount} 条选择入库明细`);
 });

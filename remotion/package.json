@@ -1,0 +1,22 @@
+{
+  "name": "paidanruku-tab-switch-animation",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts ThreeTabSwitch out/three-tab-switch.mp4",
+    "still": "remotion still src/index.ts ThreeTabSwitch out/three-tab-switch-frame75.png --frame=75"
+  },
+  "dependencies": {
+    "@remotion/cli": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "remotion": "latest",
+    "typescript": "latest"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3"
+  }
+}

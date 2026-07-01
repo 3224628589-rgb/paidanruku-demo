@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <defs>
+    <radialGradient id="bodyGlow" cx="35%" cy="18%" r="82%">
+      <stop offset="0" stop-color="#9FB2FF"/>
+      <stop offset=".56" stop-color="#516BEA"/>
+      <stop offset="1" stop-color="#2738A5"/>
+    </radialGradient>
+    <linearGradient id="lens" x1="63" y1="78" x2="126" y2="136">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset=".56" stop-color="#DDE4FF"/>
+      <stop offset="1" stop-color="#8FA2FF"/>
+    </linearGradient>
+    <filter id="softShadow" x="15" y="35" width="170" height="145" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="13" stdDeviation="12" flood-color="#3349C8" flood-opacity=".34"/>
+      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#1B2468" flood-opacity=".26"/>
+    </filter>
+    <filter id="innerGlow" x="20" y="25" width="160" height="130" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="blur"/>
+      <feOffset dy="-7"/>
+      <feComposite in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1"/>
+      <feColorMatrix values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0"/>
+      <feBlend in2="SourceGraphic"/>
+    </filter>
+  </defs>
+  <ellipse cx="100" cy="164" rx="55" ry="15" fill="#5067E8" opacity=".25" filter="url(#softShadow)"/>
+  <g filter="url(#softShadow)">
+    <path d="M46 75c0-10 8-18 18-18h19l8-15c3-6 9-9 16-9h19c7 0 13 3 16 9l8 15h18c10 0 18 8 18 18v63c0 10-8 18-18 18H64c-10 0-18-8-18-18V75Z" fill="url(#bodyGlow)"/>
+    <path d="M63 67h104c5 0 9 4 9 9v2" stroke="#B8C6FF" stroke-width="4" stroke-linecap="round" opacity=".72"/>
+    <g filter="url(#innerGlow)">
+      <circle cx="104" cy="108" r="36" fill="url(#lens)"/>
+      <circle cx="104" cy="108" r="21" fill="#4159D8"/>
+      <circle cx="96" cy="98" r="8" fill="#F8FBFF" opacity=".78"/>
+      <circle cx="113" cy="116" r="9" fill="#213397" opacity=".38"/>
+    </g>
+    <circle cx="155" cy="82" r="8" fill="#DDE4FF"/>
+  </g>
+</svg>

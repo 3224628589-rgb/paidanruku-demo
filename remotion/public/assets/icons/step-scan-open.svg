@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <defs>
+    <linearGradient id="openTop" x1="36" y1="43" x2="160" y2="104">
+      <stop stop-color="#FFE0A9"/>
+      <stop offset="1" stop-color="#F38B25"/>
+    </linearGradient>
+    <linearGradient id="openFront" x1="54" y1="89" x2="150" y2="164">
+      <stop stop-color="#FFC06A"/>
+      <stop offset="1" stop-color="#DE7119"/>
+    </linearGradient>
+    <filter id="openShadow" x="21" y="30" width="160" height="145" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="13" stdDeviation="12" flood-color="#D36C18" flood-opacity=".3"/>
+      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#6D3308" flood-opacity=".22"/>
+    </filter>
+  </defs>
+  <ellipse cx="101" cy="166" rx="55" ry="14" fill="#E78523" opacity=".24"/>
+  <g filter="url(#openShadow)">
+    <path d="M49 82 101 54l52 28-52 30-52-30Z" fill="#FFD69A"/>
+    <path d="M48 78 27 53l52-22 22 24-53 23Z" fill="url(#openTop)"/>
+    <path d="M153 78 174 53l-52-22-21 24 52 23Z" fill="#F69A35"/>
+    <path d="M49 82v52l52 30v-52L49 82Z" fill="#F59A35"/>
+    <path d="M153 82v52l-52 30v-52l52-30Z" fill="url(#openFront)"/>
+    <path d="M101 112v52" stroke="#BD5E15" stroke-width="5" opacity=".42"/>
+    <path d="M64 97v23M138 97v23" stroke="#FFE4B5" stroke-width="5" stroke-linecap="round" opacity=".48"/>
+    <path d="M79 65 123 90" stroke="#FFF3DB" stroke-width="5" stroke-linecap="round" opacity=".7"/>
+  </g>
+</svg>

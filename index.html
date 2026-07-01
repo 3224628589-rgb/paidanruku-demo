@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>掌店易智能入库 - 扫描仪屏 Demo</title>
-    <link rel="stylesheet" href="styles.css?v=status-glass-cards-3" />
+    <link rel="stylesheet" href="styles.css?v=ready-submit-1" />
   </head>
   <body>
     <main class="demo-stage">
@@ -120,19 +120,16 @@
 
         <section id="photoPage" class="page page-photo">
           <div class="camera-card">
-            <div class="camera-top">
-              <span>随货同行单拍摄</span>
-              <button id="uploadPhoto" class="top-upload">
-                <span class="upload-icon"></span>
-                从相册上传
-              </button>
-            </div>
             <div class="camera-view">
               <div class="scan-frame">
                 <i class="corner tl"></i>
                 <i class="corner tr"></i>
                 <i class="corner bl"></i>
                 <i class="corner br"></i>
+                <button id="uploadPhoto" class="top-upload frame-action">
+                  <span class="upload-icon"></span>
+                  从相册上传
+                </button>
                 <img class="receipt-shot" src="assets/img/随货同行单.png" alt="随货同行单拍摄画面" />
                 <div class="camera-hint">
                   <strong>请将随货同行单放入取景框</strong>
@@ -160,19 +157,16 @@
 
         <section id="scanPage" class="page hidden">
           <div class="scan-camera-card">
-            <div class="camera-top">
-              <span>追溯码识别</span>
-              <button id="mockScan" class="top-upload">
-                <span class="scan-dot"></span>
-                模拟识别
-              </button>
-            </div>
             <div class="camera-view scan-camera-view">
               <div class="scan-frame goods-frame">
                 <i class="corner tl"></i>
                 <i class="corner tr"></i>
                 <i class="corner bl"></i>
                 <i class="corner br"></i>
+                <button id="mockScan" class="top-upload frame-action">
+                  <span class="scan-dot"></span>
+                  模拟识别
+                </button>
                 <div class="medicine-scene">
                   <img class="trace-shot" src="assets/img/追溯码扫描.jpg" alt="追溯码扫描取景画面" />
                   <div id="scanPulse" class="scan-pulse hidden">
@@ -323,6 +317,6 @@
     </main>
 
     <div id="toast" class="toast hidden">入库完成，票据照片、追溯码和核验结果已留痕</div>
-    <script src="app.js?v=status-glass-cards-3"></script>
+    <script src="app.js?v=ready-submit-1"></script>
   </body>
 </html>
