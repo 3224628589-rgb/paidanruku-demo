@@ -7721,24 +7721,24 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 /* PC landscape adaptation: preserve the current demo elements and only change sizing/layout. */
 @media (min-width: 0) {
   :root {
-    --demo-stage-padding: 12px;
-    --demo-device-max: 1440px;
+    --demo-stage-padding: 0px;
+    --demo-device-max: 100vw;
   }
 
   .demo-stage {
-    place-items: center;
+    place-items: stretch;
     padding: var(--demo-stage-padding);
   }
 
   .device {
-    width: min(
-      calc(100vw - (var(--demo-stage-padding) * 2)),
-      calc((100vh - (var(--demo-stage-padding) * 2)) * 16 / 9),
-      var(--demo-device-max)
-    );
-    aspect-ratio: 16 / 9;
-    border-width: 10px;
-    border-radius: 24px;
+    width: 100vw;
+    height: 100vh;
+    min-height: 680px;
+    max-width: none;
+    aspect-ratio: auto;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
   }
 
   .stepper {
