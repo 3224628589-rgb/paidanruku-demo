@@ -1,65 +1,62 @@
-# Design QA
+# 三页共享进度组件设计 QA
 
-source visual truth path: `/Users/lfq/Desktop/paidanruku demo/figma-reference-1260-6317.png`
+日期：2026-07-14
 
-user annotation reference: `/var/folders/4x/5w_n1kx55p5c_r8b6gd5xqvw0000gn/T/codex-clipboard-2aaaa5d2-e982-441d-afe5-1c5a76812317.png`
+## 本轮边界
 
-implementation screenshots:
-- `/Users/lfq/Desktop/paidanruku demo/density-photo-balanced.png`
-- `/Users/lfq/Desktop/paidanruku demo/density-scan-hit.png`
-- `/Users/lfq/Desktop/paidanruku demo/density-scan-hit-user-viewport.png`
-- `/Users/lfq/Desktop/paidanruku demo/density-mobile-scan-hit.png`
-- `/Users/lfq/Desktop/paidanruku demo/density-approve.png`
-- `/Users/lfq/Desktop/paidanruku demo/density-mobile-photo-balanced.png`
-- `/Users/lfq/Desktop/paidanruku demo/qa-photo-two-rows.png`
-- `/Users/lfq/Desktop/paidanruku demo/qa-mobile-photo-two-rows.png`
-- `/Users/lfq/Desktop/paidanruku demo/qa-approval-prompts-initial.png`
-- `/Users/lfq/Desktop/paidanruku demo/qa-mobile-approval-prompts.png`
-- `/Users/lfq/Desktop/paidanruku demo/qa-approval-drop-prompts.png`
-- `/Users/lfq/Desktop/paidanruku demo/qa-progress-pages-final.png`
-- `/Users/lfq/Desktop/paidanruku demo/qa-ready-submit-inbound.png`
+- 只统一拍单、验货、核准三页右侧进度组件与相关交互。
+- 不再为核准页或指定任务覆盖进度数字、轨道比例或卡片尺寸。
+- 核准主内容的蓝卡、黄卡和三方对比纵向布局保持不变。
 
-viewport: desktop `1100 x 1050`, user-like desktop `1920 x 947`, narrow `430 x 900`, mobile `390 x 844`
+## 共享组件契约
 
-state: photo captured, scan page with hit state, approve workbench loaded
+三页均由 `renderInboundProgress()` 一次计算、三处渲染，DOM 顺序完全一致：
 
-**Findings**
-- No actionable P0/P1/P2 findings after the balance pass.
-- Follow-up overflow audit passed after fixing the dynamic scan hit state: `本次录入` and trace-code chips reported `0` card-boundary leaks on `1920 x 947` and `390 x 844`; receive list and bottom progress footer reported no overlap.
-- Photo page result area audit passed: after 5 captures, all 5 thumbnails were visible across two rows on desktop and mobile.
-- Approval bubble audit passed: the `待核准` bubble leaves the previous item in the top pending queue and selects the next item; the `准入库` bubble moves the current item out of the pending queue. Both target bottom cards received the drop impact animation class during the flight.
-- Dynamic progress audit passed: after one photo, `待验货` changed `0 -> 4`; after one scan batch, `待验货` changed `4 -> 2`; after dropping one pending item into `准入库`, `准入库` changed `2 -> 3`, `待核准` changed `20 -> 19`, and the green/yellow progress segments resized accordingly.
-- Progress page audit passed: status cards open in-page secondary views rather than modals. `准入库` shows purchase-order groups and line-level `查看核对详情`; the detail page renders the same approval snapshot table. `待验货` shows a receipt image summary and expanded OCR rows.
-- Approval comparison audit passed: the extra `异常` tag in the field label column is removed; abnormal state remains visible through row/value styling only.
-- Ready-submit audit passed: on the `准入库` secondary page, `提交入库` moved all 2 ready line rows into `已入库`, updated bottom counts from `0/2` to `2/0`, disabled the submit button, and left the secondary page in an empty state.
+1. `提报异常`
+2. `已入库`
+3. `准入库`
+4. `待核准`
+5. `待验货`
+6. 蓝、绿、黄、粉动态比例轨道
 
-**Required Fidelity Surfaces**
-- Fonts and typography: secondary section titles were removed or reduced; primary content labels, product names, counts, and action buttons remain readable without oversized low-value headers.
-- Spacing and layout rhythm: photo and scan title bars were removed, camera frames now occupy the dominant vertical area, page gaps were reduced, and bottom progress aligns to the same width as the main content. The approve workbench now gives the central evidence/comparison area most of the height.
-- Colors and visual tokens: bottom status colors follow the latest Figma node palette: cyan/blue for `已入库`, green for `准入库`, amber for `待核准`, slate for `待验货`.
-- Image quality and asset fidelity: Figma status icons are rendered from downloaded SVG assets. Photo and trace-code images remain real image assets, not CSS placeholders.
-- Copy and content: `随货同行单拍摄` and `追溯码识别` no longer consume standalone rows. Upload/simulate actions are attached to their camera frames.
+基础几何：
 
-**Patches Made**
-- Moved photo upload and mock scan controls into the camera frames.
-- Removed low-value camera title bars from photo and scan pages.
-- Balanced the photo page so the viewfinder remains dominant while the captured-ticket row still has a complete readable thumbnail.
-- Reduced the photo viewfinder height further and expanded the captured-ticket result tray to show two rows of thumbnails.
-- Made bottom status cards equal-width with main content, larger, and readable; in tight space the count and label sit on one line.
-- Made bottom status numbers and progress widths state-driven instead of hardcoded, including true zero-width segments for empty statuses.
-- Increased bottom status color purity: brighter cyan/blue, green, amber, and cool slate fills/borders/rails.
-- Changed status-card click behavior from modal detail to in-page secondary/tertiary pages that preserve the top step tabs and bottom progress cards.
-- Added `待验货` receipt-image secondary page with supplier, line count, and OCR row details including image row number, product, spec, manufacturer, quantity, batch, unit price, and amount.
-- Added approval-page floating action bubbles above `准入库` and `待核准`, wired them to physical drop animations into the matching bottom cards, and added jelly impact feedback on the target cards.
-- Added `提交入库` on the `准入库` secondary page so all ready line rows can be batch-submitted into `已入库`.
-- Reduced card nesting, padding, and borders across photo, scan, and approve pages.
-- Compacted the receive list headers without shrinking the main scan/review content.
-- Compacted approve queue, evidence card, comparison table, and decision area.
-- Constrained trace-code chip text with inner ellipsis, prevented receive cards from shrinking inside the scroll list, and switched the receive list to content-height rows so dynamic scan rows stay inside their cards.
-- On mobile, changed receive cards to stack product information above actions so product name, spec, approval tag, metadata, and `本次录入` do not fight for the same narrow row.
-- Added the layout-density rule to `/Users/lfq/.codex/AGENTS.md`.
+| 元素 | 三页统一值 |
+| --- | --- |
+| 组件 | `220×922px` |
+| 提报异常 | `152×70px` |
+| 四张状态卡 | `152×200px` |
+| 状态卡间距 | `10px` |
+| 轨道外壳 | `50px` |
+| 短屏缩放 | `.84`；`≤760px` 高度时 `.76` |
 
-**Residual Notes**
-- Browser console shows a favicon 404 from the static server only; no page script errors were observed.
+## 数据检查
 
-final result: passed
+- 四卡数据只来自同一次 `getProgressGroups()` 计算，没有页面分支或任务 ID 分支。
+- 已删除 `40 / 3 / 19 / 20` 固定展示和固定轨道段高。
+- 三页轨道均按四卡真实件数计算，切换步骤只切换主工作区。
+- 待验货保持原有 OCR 明细行口径，卡片数字等于待验货列表行数；待核准、准入库、已入库统计一件一卡后的 `items.length`。四卡均不读取采购数量字段。
+- 核准队列按验货商品卡展开：一个追溯码对应一张卡、数量恒为 `1`。左侧行数、标题和右侧待核准卡片完全一致；例如 `7 + 7 + 2` 必须渲染为 `16` 行，而不是三张 `X7 / X7 / X2` 聚合卡。
+- `renderReceiveItems()` 与 `ensureApproveWorkflowState()` 不再在切步渲染期间改写核准决策；状态归类只在打开任务或真实业务操作时同步。
+- 新建任务保持全 `0`；真实业务动作发生后，三页同步看到同一结果。
+
+## 留在待核准
+
+- 当前明细状态仍为 `pending`，待核准数量不变。
+- `confirmedPendingLineIds` 使用操作顺序维护队列尾部；重复操作同一条时仍会移到最新队尾。
+- 当前队列卡通过 FLIP + 下落回弹动画移动到队尾，其他卡平滑补位。
+- 该分支不调用 `animateDecisionDrop()`，也不调用 `triggerProgressBucketImpact()`，因此不会飞入右侧待核准卡或触发轨道发光。
+
+## 静态验证
+
+- `node --check app.js`：通过。
+- `git diff --check`：通过。
+- PostCSS 解析 `styles.css`：通过。
+- 状态流：待验货卡数字始终等于仍有余量的 OCR 明细行数；同品批两次扫码准入库 `0 → 1 → 2`；异常扫码待核准 `0 → 1`。
+- 核准卡粒度：`7 + 7 + 2` 生成 `16` 个唯一核准 ID、渲染 `16` 行；核准其中一张只迁移 `1` 件。
+- 验货三态：绿色=`detailApprovalStatus:1`，黄色=`detailApprovalStatus:0`，蓝色=`inboundStatus:1`；已入库码重复识别结果为新增 `0`、命中 `false`、错误“无法录入已入库追溯码”。
+- 拍单票据管理：缩略图删除 X 已移除；选择框、全选和删除所选位于原列表标题区，不新增独立工具行，不压缩主取景框。
+- 验货品批管理：选择框进入每张已录入品批卡片；全选和删除所选收在原列表标题区，保留扫码取景框、卡片信息结构及右侧进度条尺寸。
+- 三处 `[data-progress-footer]`、共享提报入口、无固定数字、队尾顺序与待核准无进度冲击断言：通过。
+
+上一轮 `docs/qa/screenshots/` 中的核准页图片对应旧的核准专用小尺寸进度列，已不作为本轮共享组件验收依据。

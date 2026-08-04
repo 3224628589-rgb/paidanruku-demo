@@ -3,12 +3,84 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>掌店易智能入库 - 扫描仪屏 Demo</title>
-    <link rel="stylesheet" href="styles.css?v=pc-site-1" />
+    <title>掌店易智能入库 - 入库任务 Demo</title>
+    <link rel="stylesheet" href="styles.css?v=prd-word-alignment-v29" />
   </head>
   <body>
     <main class="demo-stage">
       <section class="device">
+        <section id="taskHomePage" class="task-home-page">
+          <header class="task-home-header">
+            <div class="task-home-title">
+              <strong>掌店易智能入库</strong>
+              <span>入库任务</span>
+            </div>
+            <button id="newInboundTask" class="primary-task-btn">新建入库任务</button>
+          </header>
+
+          <section class="task-list-panel">
+            <div class="task-list-head">
+              <strong>历史入库任务</strong>
+              <span id="taskListSummary">0 个任务</span>
+            </div>
+            <form id="taskFilters" class="task-filter-bar" autocomplete="off">
+              <label>
+                <span>入库任务单号</span>
+                <input data-task-filter="taskId" placeholder="请输入入库任务单号" />
+              </label>
+              <label>
+                <span>采购单号</span>
+                <input data-task-filter="purchaseOrder" placeholder="请输入采购单号" />
+              </label>
+              <label>
+                <span>供应商</span>
+                <input data-task-filter="supplier" placeholder="请输入供应商" />
+              </label>
+              <label>
+                <span>商品信息</span>
+                <input data-task-filter="product" placeholder="请输入商品名称/规格" />
+              </label>
+              <label class="task-date-filter">
+                <span>任务创建时间</span>
+                <span class="task-date-range">
+                  <input type="date" data-task-filter="createdFrom" aria-label="任务创建开始日期" />
+                  <i>至</i>
+                  <input type="date" data-task-filter="createdTo" aria-label="任务创建结束日期" />
+                </span>
+              </label>
+              <label class="task-date-filter">
+                <span>最近操作时间</span>
+                <span class="task-date-range">
+                  <input type="date" data-task-filter="updatedFrom" aria-label="最近操作开始日期" />
+                  <i>至</i>
+                  <input type="date" data-task-filter="updatedTo" aria-label="最近操作结束日期" />
+                </span>
+              </label>
+              <button id="clearTaskFilters" type="button">清空筛选</button>
+            </form>
+            <div class="task-list-columns" aria-hidden="true">
+              <span>入库任务单号</span>
+              <span>任务创建时间</span>
+              <span>最近操作时间</span>
+              <span>待验货数量</span>
+              <span>待核准数量</span>
+              <span>准入库数量</span>
+              <span>已入库数量</span>
+              <span>采购单号 / 供应商</span>
+              <span>操作</span>
+            </div>
+            <div id="taskList" class="task-list"></div>
+          </section>
+        </section>
+
+        <div id="workflowShell" class="workflow-shell hidden">
+        <header class="workflow-topbar">
+          <div class="workflow-task-copy">
+            <strong id="currentTaskTitle">入库任务</strong>
+            <span id="currentTaskMeta">拍单 · 验货 · 核准</span>
+          </div>
+        </header>
+
         <header class="app-header">
           <div class="brand">
             <div class="brand-mark">
@@ -23,6 +95,7 @@
         </header>
 
         <nav class="stepper" aria-label="入库步骤">
+          <button id="backToTaskHome" class="task-back-btn">返回任务列表</button>
           <button class="step active" data-step="photo">
             <span class="step-icon neu-icon photo-neu" aria-hidden="true">
               <svg class="neo-svg" viewBox="0 0 120 120" fill="none">
@@ -130,6 +203,7 @@
                   <span class="upload-icon"></span>
                   从相册上传
                 </button>
+                <input id="receiptUploadInput" class="visually-hidden" type="file" accept="image/png,image/jpeg" multiple />
                 <img class="receipt-shot" src="assets/img/随货同行单.png" alt="随货同行单拍摄画面" />
                 <div class="camera-hint">
                   <strong>请将随货同行单放入取景框</strong>
@@ -145,7 +219,13 @@
           <div class="photo-tray">
             <div class="tray-title">
               <strong id="photoCount">已拍票据：0张</strong>
-              <button id="clearPhotos" class="ghost-btn">清空</button>
+              <div class="photo-selection-actions">
+                <label class="select-all-photos">
+                  <input id="selectAllPhotos" type="checkbox" />
+                  <span>全选</span>
+                </label>
+                <button id="deleteSelectedPhotos" class="delete-selected-photos" disabled>删除所选</button>
+              </div>
             </div>
             <div id="photoGrid" class="photo-grid">
               <div class="empty-thumb">票据照片会显示在这里</div>
@@ -193,6 +273,13 @@
                 <input id="scanSearch" placeholder="扫描追溯码或者输入商品信息" />
               </label>
               <span id="scanCount" class="receive-total">已录入 0 码</span>
+              <div class="batch-selection-actions">
+                <label class="select-all-batches">
+                  <input id="selectAllBatches" type="checkbox" />
+                  <span>全选</span>
+                </label>
+                <button id="deleteSelectedBatches" class="delete-selected-batches" disabled>删除所选</button>
+              </div>
             </div>
             <div id="receiveList" class="batch-list"></div>
           </section>
@@ -313,10 +400,11 @@
             </div>
           </section>
         </section>
+        </div>
       </section>
     </main>
 
-    <div id="toast" class="toast hidden">入库完成，票据照片、追溯码和核验结果已留痕</div>
-    <script src="app.js?v=ready-submit-1"></script>
+    <div id="toast" class="toast hidden" role="status" aria-live="polite" aria-atomic="true">入库完成，票据照片、追溯码和核验结果已留痕</div>
+    <script src="app.js?v=prd-word-alignment-v29"></script>
   </body>
 </html>
