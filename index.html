@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>掌店易智能入库 - 入库任务 Demo</title>
-    <link rel="stylesheet" href="styles.css?v=prd-word-alignment-v29" />
+    <link rel="stylesheet" href="styles.css?v=approval-sync-855" />
   </head>
   <body>
     <main class="demo-stage">
@@ -29,16 +29,12 @@
                 <input data-task-filter="taskId" placeholder="请输入入库任务单号" />
               </label>
               <label>
-                <span>采购单号</span>
-                <input data-task-filter="purchaseOrder" placeholder="请输入采购单号" />
-              </label>
-              <label>
-                <span>供应商</span>
+                <span>供应商名称</span>
                 <input data-task-filter="supplier" placeholder="请输入供应商" />
               </label>
               <label>
-                <span>商品信息</span>
-                <input data-task-filter="product" placeholder="请输入商品名称/规格" />
+                <span>运单号</span>
+                <input data-task-filter="waybill" placeholder="请输入运单号" />
               </label>
               <label class="task-date-filter">
                 <span>任务创建时间</span>
@@ -48,25 +44,19 @@
                   <input type="date" data-task-filter="createdTo" aria-label="任务创建结束日期" />
                 </span>
               </label>
-              <label class="task-date-filter">
-                <span>最近操作时间</span>
-                <span class="task-date-range">
-                  <input type="date" data-task-filter="updatedFrom" aria-label="最近操作开始日期" />
-                  <i>至</i>
-                  <input type="date" data-task-filter="updatedTo" aria-label="最近操作结束日期" />
-                </span>
-              </label>
+              <button id="recentTaskDates" type="button" class="task-date-shortcut">近7天</button>
               <button id="clearTaskFilters" type="button">清空筛选</button>
             </form>
             <div class="task-list-columns" aria-hidden="true">
               <span>入库任务单号</span>
+              <span>供应商名称</span>
+              <span>运单号</span>
               <span>任务创建时间</span>
               <span>最近操作时间</span>
               <span>待验货数量</span>
               <span>待核准数量</span>
               <span>准入库数量</span>
               <span>已入库数量</span>
-              <span>采购单号 / 供应商</span>
               <span>操作</span>
             </div>
             <div id="taskList" class="task-list"></div>
@@ -236,9 +226,10 @@
         </section>
 
         <section id="scanPage" class="page hidden">
-          <div class="scan-camera-card">
-            <div class="camera-view scan-camera-view">
-              <div class="scan-frame goods-frame">
+          <div class="scan-left-stack">
+            <div class="scan-camera-card">
+              <div class="camera-view scan-camera-view">
+                <div class="scan-frame goods-frame">
                 <i class="corner tl"></i>
                 <i class="corner tr"></i>
                 <i class="corner bl"></i>
@@ -258,21 +249,21 @@
                   <strong>请将药品追溯码朝向摄像头</strong>
                   <span>识别后自动录入商品、规格、批号和效期</span>
                 </div>
+                </div>
               </div>
             </div>
+            <section id="scanReviewPanel" class="scan-review-panel" aria-label="扫码验货记录" aria-live="polite"></section>
           </div>
-
-          <section id="scanReviewPanel" class="scan-review-panel hidden"></section>
 
           <section class="receive-section batch-section">
             <div class="receive-head">
               <div>
-                <h2>已录入品批</h2>
+                <h2>已验货品批</h2>
               </div>
               <label class="receive-search">
                 <input id="scanSearch" placeholder="扫描追溯码或者输入商品信息" />
               </label>
-              <span id="scanCount" class="receive-total">已录入 0 码</span>
+              <span id="scanCount" class="receive-total">已验货 0 码</span>
               <div class="batch-selection-actions">
                 <label class="select-all-batches">
                   <input id="selectAllBatches" type="checkbox" />
@@ -405,6 +396,6 @@
     </main>
 
     <div id="toast" class="toast hidden" role="status" aria-live="polite" aria-atomic="true">入库完成，票据照片、追溯码和核验结果已留痕</div>
-    <script src="app.js?v=prd-word-alignment-v29"></script>
+    <script src="app.js?v=approval-sync-855"></script>
   </body>
 </html>

@@ -3718,15 +3718,6 @@ button:disabled { cursor: not-allowed; opacity: .45; }
   animation: scanPulse .48s ease both;
 }
 
-.scan-review-panel {
-  flex: 0 0 auto;
-  border: 1px solid #e2e8f3;
-  border-radius: 12px;
-  background: #fff;
-  overflow: hidden;
-  box-shadow: 0 10px 20px rgba(31,39,70,.055);
-}
-
 .scan-review-head {
   min-height: 32px;
   padding: 5px 8px;
@@ -8054,6 +8045,25 @@ button:disabled { cursor: not-allowed; opacity: .45; }
   pointer-events: none;
 }
 
+/* The receipt preview is derived from the matched OCR line coordinates, not a
+   separate screenshot. This keeps the approval card faithful to the source
+   photo after a user rematches the delivery-note line. */
+.receipt-hit-crop {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-image: var(--receipt-image);
+  background-repeat: no-repeat;
+  background-size: var(--crop-width) var(--crop-height);
+  background-position: var(--crop-x) var(--crop-y);
+}
+
+.modal-receipt-crop {
+  min-height: min(52vh, 470px);
+  border-radius: 14px;
+  background-color: #f4f7fb;
+}
+
 .approval-table-toolbar {
   min-height: 34px;
   padding: 7px 10px 6px;
@@ -11224,6 +11234,131 @@ button:disabled { cursor: not-allowed; opacity: .45; }
   }
 }
 
+/* Wiki revision 506: task lifecycle and scan-round controls. */
+.task-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+.task-row-link {
+  min-height: 26px;
+  padding: 0 7px;
+  border-radius: 8px;
+  color: #5a6b8b;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.task-row-link:hover,
+.task-row-link:focus-visible {
+  color: #3158df;
+  background: #edf2ff;
+  outline: 0;
+}
+
+.task-row-link.danger:hover,
+.task-row-link.danger:focus-visible {
+  color: #d95050;
+  background: #fff0f0;
+}
+
+.task-editor-sheet {
+  width: min(480px, calc(100vw - 36px));
+}
+
+.task-editor-field {
+  display: grid;
+  gap: 7px;
+}
+
+.task-editor-field > span {
+  color: #536179;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.task-editor-field input {
+  width: 100%;
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid #dce4f2;
+  border-radius: 12px;
+  outline: 0;
+  color: #1f2b42;
+  background: #fff;
+  font: inherit;
+  font-size: 14px;
+}
+
+.task-editor-field input:focus {
+  border-color: #5d7cf4;
+  box-shadow: 0 0 0 3px rgba(72, 103, 240, .12);
+}
+
+.task-editor-field input[readonly] {
+  color: #657189;
+  background: #f5f7fb;
+}
+
+.scan-review-head {
+  min-height: 42px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px solid #e6ebf5;
+}
+
+.scan-review-head strong {
+  color: #243657;
+  font-size: 15px;
+  line-height: 20px;
+}
+
+.scan-review-head span,
+.scan-previous-round span {
+  color: #77859b;
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.batch-row.approval-inbound .batch-select {
+  opacity: .38;
+  cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+  .task-row-actions {
+    justify-content: flex-start;
+  }
+
+  .scan-review-head {
+    align-items: flex-start;
+    flex-direction: column;
+    justify-content: center;
+    padding-block: 8px;
+  }
+}
+
+@media (min-width: 900px) {
+  #scanReviewPanel {
+    position: relative;
+    z-index: 3;
+    align-self: start;
+    margin: 8px 8px 0;
+  }
+
+  #scanPage .receive-section {
+    margin-top: 164px;
+  }
+}
+
 /* 最新 PRD 4.5—4.8：四类状态明细沿用同一套紧凑工作台骨架。 */
 #approvePage .prd-bucket-shell {
   border-color: #dce4ef;
@@ -13423,5 +13558,444 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 @media (min-width: 900px) {
   #approvePage {
     padding: 10px 12px 12px;
+  }
+}
+
+/* Wiki revision 589: task list fields and the scan-round contract. */
+.task-editor-field textarea {
+  width: 100%;
+  min-height: 76px;
+  padding: 10px 12px;
+  resize: vertical;
+  border: 1px solid #dce4f2;
+  border-radius: 12px;
+  outline: 0;
+  color: #1f2b42;
+  background: #fff;
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.task-editor-field textarea:focus {
+  border-color: #5d7cf4;
+  box-shadow: 0 0 0 3px rgba(72, 103, 240, .12);
+}
+
+.task-waybill-cell {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  gap: 4px;
+}
+
+.task-waybill-cell span {
+  max-width: 100%;
+  overflow: hidden;
+  padding: 2px 6px;
+  color: #5b6780;
+  font-size: 11px;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: 5px;
+  background: #f2f5fa;
+}
+
+.task-date-shortcut {
+  color: #4267e8 !important;
+  border-color: #cdd9ff !important;
+  background: #f3f6ff !important;
+}
+
+.scan-review-panel {
+  --scan-review-pad: 14px;
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  overflow: hidden;
+  border: 1px solid #dbe4f3;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 7px 18px rgba(39, 61, 97, .06);
+}
+
+.scan-review-panel.hidden {
+  display: none;
+}
+
+.scan-round-block {
+  min-width: 0;
+  padding: var(--scan-review-pad);
+  display: grid;
+  gap: 9px;
+}
+
+.scan-round-block + .scan-round-block {
+  border-top: 1px solid #e5eaf2;
+}
+
+.scan-current-round {
+  min-height: 142px;
+}
+
+.scan-round-heading {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.scan-round-heading strong {
+  color: #263754;
+  font-size: 15px;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+.scan-round-heading span {
+  min-width: 0;
+  color: #78859a;
+  font-size: 11px;
+  line-height: 16px;
+  text-align: right;
+}
+
+.scan-round-block .scan-round-codes {
+  min-width: 0;
+  min-height: 50px;
+  padding: 8px 9px;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 7px;
+  border-radius: 9px;
+  background: #f7f9fd;
+}
+
+.scan-round-code {
+  max-width: 100%;
+  padding: 3px 6px;
+  overflow: hidden;
+  color: #3158df;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10px;
+  line-height: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border: 1px solid #cdd9ff;
+  border-radius: 7px;
+  background: #eff3ff;
+}
+
+.scan-round-empty {
+  align-self: center;
+  color: #8a96a9;
+  font-size: 12px;
+}
+
+.scan-previous-round {
+  min-height: 176px;
+  background: #f4f6f9;
+}
+
+.scan-result-groups {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.scan-result-row {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+}
+
+.scan-result-row > strong {
+  color: #5d6980;
+  font-size: 11px;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.scan-result-codes {
+  min-width: 0;
+  min-height: 32px;
+  padding: 4px 6px;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  gap: 5px;
+  border-radius: 7px;
+  background: #fff;
+}
+
+.scan-result-row.duplicate .scan-result-codes {
+  background: #fff9eb;
+}
+
+.scan-result-row.failed .scan-result-codes {
+  background: #fff3f3;
+}
+
+.scan-result-row .scan-round-code {
+  padding: 3px 6px;
+  font-size: 10px;
+  line-height: 14px;
+}
+
+.scan-withdraw-last {
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid #bed0ff;
+  border-radius: 9px;
+  color: #3158df;
+  background: #f4f7ff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.scan-withdraw-last:disabled {
+  color: #a9b1c0;
+  border-color: #e1e6ef;
+  background: #f7f8fa;
+  cursor: not-allowed;
+}
+
+@media (min-width: 1100px) {
+  .task-list-columns,
+  .inbound-task-row {
+    grid-template-columns:
+      minmax(126px, .9fr)
+      minmax(148px, 1.08fr)
+      minmax(120px, .88fr)
+      repeat(2, minmax(102px, .64fr))
+      repeat(4, minmax(64px, .34fr))
+      minmax(110px, .76fr);
+  }
+
+  .task-list-columns span:nth-child(n+6):nth-child(-n+9),
+  .task-list-columns span:last-child {
+    text-align: center;
+  }
+}
+
+@media (min-width: 900px) {
+  #scanPage {
+    grid-template-columns: minmax(0, 1fr) minmax(420px, .78fr) 220px;
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  #scanPage .scan-left-stack {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+    min-height: 0;
+    display: grid;
+    grid-template-rows: auto auto;
+    align-content: start;
+    gap: 12px;
+  }
+
+  #scanPage .scan-left-stack .scan-camera-card {
+    grid-column: auto;
+    grid-row: auto;
+    width: 100%;
+    aspect-ratio: 1.94;
+    min-height: 0;
+    justify-self: start;
+    align-self: start;
+  }
+
+  #scanPage .receive-section {
+    grid-column: 2;
+    grid-row: 1;
+    min-height: 0;
+    margin-top: 0 !important;
+  }
+
+  #scanPage .inbound-progress-footer {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  #scanReviewPanel {
+    position: static;
+    z-index: auto;
+    grid-column: auto;
+    grid-row: auto;
+    align-self: stretch;
+    margin: 0;
+  }
+}
+
+/* Keep the progress rail intact on compact desktop widths while giving the
+   scanner a usable work surface instead of squeezing it into a third column. */
+@media (min-width: 900px) and (max-width: 1199px) {
+  #scanPage {
+    grid-template-columns: minmax(0, 1fr) 220px;
+    grid-template-rows: clamp(635px, calc(51.55vw + 171px), 790px) minmax(420px, 1fr);
+    align-items: start;
+    overflow-y: auto;
+  }
+
+  #scanPage .scan-left-stack {
+    grid-column: 1;
+    grid-row: 1;
+    min-height: min-content;
+    display: block;
+  }
+
+  #scanPage .scan-left-stack #scanReviewPanel {
+    margin-top: 12px;
+  }
+
+  #scanPage .receive-section {
+    grid-column: 1;
+    grid-row: 2;
+    min-height: 420px;
+  }
+
+  #scanPage .inbound-progress-footer {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+}
+
+@media (max-width: 899px) {
+  .scan-left-stack {
+    display: grid;
+    gap: 10px;
+  }
+
+  .scan-round-block {
+    padding: 12px;
+  }
+
+  .scan-round-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .scan-round-heading span {
+    text-align: left;
+  }
+
+  .scan-result-row {
+    grid-template-columns: 58px minmax(0, 1fr);
+  }
+}
+
+/* Wiki revision 853 + Figma node 235:138: source-match blocks belong in the
+   blue approval card. The empty variants deliberately retain only the compact
+   "请指定" rows shown in the specification. */
+#approvePage .inbound-card-copy {
+  grid-template-rows: auto clamp(42px, 6cqw, 52px) minmax(0, 1fr);
+}
+
+#approvePage .approval-blue-match-stack {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  gap: clamp(7px, .92cqw, 9px);
+}
+
+#approvePage .approval-blue-match-block {
+  min-width: 0;
+  display: grid;
+  gap: clamp(5px, .72cqw, 7px);
+}
+
+#approvePage .approval-blue-match-head {
+  min-width: 0;
+  min-height: clamp(20px, 2.58cqw, 24px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+#approvePage .approval-blue-match-head strong {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(255,255,255,.96);
+  font-size: clamp(10px, 1.28cqw, 12px);
+  font-weight: 700;
+  line-height: clamp(15px, 1.74cqw, 17px);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#approvePage .approval-blue-match-head em {
+  font-style: normal;
+  font-weight: 800;
+}
+
+#approvePage .approval-blue-match-action,
+#approvePage .approval-blue-empty-row .approval-blue-match-action {
+  flex: 0 0 auto;
+  min-height: clamp(20px, 2.58cqw, 24px);
+  max-width: min(42cqw, 250px);
+  padding: 0 clamp(8px, 1.12cqw, 11px);
+  overflow: hidden;
+  color: #fff;
+  font-size: clamp(8px, 1.02cqw, 10px);
+  font-weight: 700;
+  line-height: clamp(12px, 1.43cqw, 14px);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: 999px;
+  background: rgba(255,255,255,.18);
+}
+
+#approvePage .approval-blue-match-action:hover,
+#approvePage .approval-blue-match-action:focus-visible {
+  background: rgba(255,255,255,.3);
+  outline: 0;
+}
+
+#approvePage .approval-blue-match-stack .inbound-order-list {
+  gap: clamp(5px, .82cqw, 7px);
+}
+
+#approvePage .approval-blue-receipt-match .receipt-hit-card,
+#approvePage .approval-blue-receipt-match .receipt-hit-zoom {
+  height: clamp(60px, 7.9cqw, 78px);
+}
+
+#approvePage .approval-blue-empty-row {
+  min-width: 0;
+  min-height: clamp(31px, 3.78cqw, 36px);
+  padding: 4px 6px;
+  display: flex;
+  align-items: center;
+  border: 1px solid rgba(255,255,255,.38);
+  border-radius: 9px;
+  background: rgba(10,81,172,.28);
+}
+
+#approvePage .inbound-card.is-no-purchase-match.is-no-receipt-match {
+  aspect-ratio: 980 / 230;
+}
+
+#approvePage .inbound-card.is-no-purchase-match.is-no-receipt-match .inbound-card-copy {
+  grid-template-rows: auto clamp(42px, 6cqw, 52px) minmax(0, 1fr);
+}
+
+@media (max-width: 899px) {
+  #approvePage .approval-blue-match-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  #approvePage .approval-blue-match-action {
+    max-width: 100%;
   }
 }
